@@ -1,0 +1,33 @@
+A series of tools for working with BAM files
+
+External Library Requirments:
+1. Cython
+2. Pysam
+3. Numpy
+4. Samtools (for conversion of SAM/BAM and mpileup)
+5. biopython
+6. Scipy
+
+
+Other useful tools:
+Blast/Blat
+
+
+Goals: Must be able to read multiple bam files and deal with multiple readgroups
+
+Incorporate into django app for integration into Galaxy
+
+Different programs:
+1. Allelic Imbalance Estimation
+2. Allele Counts at bed/VCF/GTF Files
+3. Counts at genes, capable of dealing with junctions
+4. 
+
+Code Organization:
+
+pysam_callbacks
+folder containing classes to be used as callbacks for pysam.fetch
+
+Installation:
+
+setup.py install

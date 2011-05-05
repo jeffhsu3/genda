@@ -1,0 +1,5 @@
+This directory contains various scripts for analyzing next-generation sequencing data.  Must have pySeq installed for these to work.  Test data resides in scripts
+
+Folders:
+AEI : Scripts to analyze aellic imbalance in Next-Generation Sequencing
+GWAS: Rare variant genomic associations
