@@ -1,4 +1,5 @@
-A series of tools for working with BAM files
+A series of tools for working with BAM files.  There are a lot of
+dependencies.
 
 External Library Requirments:
 1. Cython
@@ -7,6 +8,7 @@ External Library Requirments:
 4. Samtools (for conversion of SAM/BAM and mpileup)
 5. biopython
 6. Scipy
+7. bx-python - interval trees for python
 
 
 Other useful tools:

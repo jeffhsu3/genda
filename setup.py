@@ -4,11 +4,13 @@ name = 'pySeq'
 version = '0.1'
 
 from distutils.core import setup
+from distutils.extension import Extension
 from Cython.Distutils import build_ext
+
 metadata = {'name':name,
 	'version':version,
 	'description':'pySeq',
-	'author':'Jeff Hsu',
+	'author':'Jeffrey Hsu',
 	'packages':['pySeq', 'pySeq.pysam_callbacks', 'pySeq.parsing',
 	    'pySeq.stats', 'pySeq.formats'],
 }

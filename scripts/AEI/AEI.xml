@@ -1,0 +1,8 @@
+<tool id="calc_aei" name="Allelic Imbalance", version="0.0.1">
+    <description>Calculate AEI from RNA-seq at annotated variant
+	positions</description>
+    <command interpreter="python">AEI.py $annotatedSNPS $bamfiles </command>
+    <inputs>
+	<param format="VCF" name="input" type="data" label="Source file" />
+	<param format="BAM" name=" />
+    </inputs>

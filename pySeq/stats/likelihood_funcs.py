@@ -5,6 +5,9 @@ An implementation of the model of allelic imbalance found in:
     
     The empirical error numbers were taken from the same publication.  
 
+    Need to asses bias of aligning.  Make assumption that most loci show
+    no-allelic imbalance.  Fit slope to curve and adjust.  
+
 Written by Jeff Hsu 2011
 
 """
@@ -21,7 +24,6 @@ transMatrix = np.array([[0,0.40210, 0.48006, 0.11784],[0.22213, 0, 0.25456,
 
 argmax = lambda array: max(izip(array, xrange(len(array))))[1]
 
-# :TODO better function name
 def logLik(f,counts, pi=2.17e-3, piTrans=transMatrix):
     """
     f = real allelic imbalance
@@ -50,7 +52,7 @@ def lik(f, counts, pi=2.17e-3, piTrans=transMatrix):
 
 def logLikHomo(counts, pi=2.17e-3, piTrans=transMatrix):
     """
-    The log Likelihood that the data
+    The log Likelihood that the data is homozygous
     """
     ind = counts.argsort()[::-1]  
     loglik = counts[ind[0]]*log(1-pi)+counts[ind[1]]*\

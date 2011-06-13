@@ -1,6 +1,6 @@
 def mirFamDict( filename ):
     """
-    Create a dictionary from the miRBase miRNA family database in memory
+    Create a dictionary from the miRBase miRNA family. 
     """
     fam_dict = {}
     with open(filename, "rU") as filehandle:
