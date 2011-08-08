@@ -195,9 +195,10 @@ def main():
     if options.G != None:
 	geno = open(options.G, "rU")
 	# :TODO ensure allow different well known file formats and also check
-	geno_samples=geno.next().strip('\n').split('\t')[4:]
+	geno_samples = geno.next().strip('\n').split('\t')[4:]
 	# Initialize first row
 	geno_line = geno.next().strip('\n').split('\t')
+	# match geno_samples to bam_samples
 	geno_to_bam_ind = []
 	
 
@@ -237,6 +238,8 @@ def main():
 	# Need to map genotype names in the files with the bamfiles or sample
 	# Need to move to the same position as where the SNP is.
 	# Ideally all this information would be loaded into a database. 
+	# Maybe load into memory?
+	# convert into VCF file
 	if options.G != None:
 	    while geno_line[2] < position:
 		# Need to handle edge cases at the end of chromosomes
@@ -256,7 +259,7 @@ def main():
 		"""
 		# Should it also return the value of the estimate?
 		any_hets=[]
-		if sample_c.sum() >=count_threshold:
+		if sample_c.sum() >= count_threshold:
 		    if lf.isHet(sample_c):
 			p_values.append(lf.ratioLik(sample_c))
 			p_values.append("%s:%s" % (INDEX_BASE[ind[0]],
