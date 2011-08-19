@@ -1,4 +1,4 @@
-A series of tools for working with BAM files.  There are a lot of
+Aseries of tools for working with BAM files.  There are a lot of
 dependencies.
 
 External Library Requirments:
@@ -9,6 +9,7 @@ External Library Requirments:
 5. biopython
 6. Scipy
 7. bx-python - interval trees for python
+8. MOODS - PWM matching
 
 
 Other useful tools:
@@ -23,7 +24,8 @@ Different programs:
 1. Allelic Imbalance Estimation
 2. Allele Counts at bed/VCF/GTF Files
 3. Counts at genes, capable of dealing with junctions
-4. 
+4. Creating alternate fasta sequences for accurate estimation of Allelic imbalance 
+5. 
 
 Code Organization:
 
