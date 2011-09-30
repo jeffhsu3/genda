@@ -9,5 +9,7 @@ There is a script in scripts that runs the whole pipeline.
 """
 
 class readSet(object):
+    pass
 
     def __init__(self):
+        pass

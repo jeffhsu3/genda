@@ -3,7 +3,6 @@ import sys
 def regionParse(string):
     """
     Parses region:start_position-end_position, returns a tuple
-    Example: 
     >>> regionParse('chr4:200000-200100') 
     ('chr4', 200000, 200100)
     """
@@ -13,9 +12,12 @@ def regionParse(string):
     end = end.replace(',', '')
 
     try:
-	start = int(start)
-	end = int(start)
+        start = int(start)
+        end = int(end)
     except ValueError:
-	sys.exit()
+        sys.exit()
     return(string[0:string.find(':')] , start, end)
-    
+
+if __name__ =="__main__":
+    import doctest
+    doctest.testmod()

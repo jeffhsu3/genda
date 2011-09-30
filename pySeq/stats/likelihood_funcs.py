@@ -2,7 +2,8 @@
 An implementation of the model of allelic imbalance found in:
     Statistical Inference of Allelic Imbalance from Transcriptome Data.
     Nothangel, Michael et. Al. Human Mutation Volume 32, Issue 1 December 2010
-    
+
+
     The empirical error numbers were taken from the same publication.  
 
     Need to asses bias of aligning.  Make assumption that most loci show
@@ -34,20 +35,23 @@ def logLik(f,counts, pi=2.17e-3, piTrans=transMatrix):
     """
     ind = counts.argsort()[::-1]  
     # Formula 1 pi: is the mis the error rate
-    
     loglik = counts[ind[0]]*log(f*(1-pi)+(1-f)*pi*piTrans[ind[1],ind[0]])+\
-	    counts[ind[1]]*log((1-f)*(1-pi)+f*pi*piTrans[ind[0],ind[1]])+\
-	    counts[ind[2]]*log(pi*(f*piTrans[ind[0],ind[2]]+(1-f)*piTrans[ind[1],ind[2]]))+\
-	    counts[ind[3]]*log(pi*(f*piTrans[ind[0],ind[3]]+(1-f)*piTrans[ind[1],ind[3]]))
+            counts[ind[1]]*log((1-f)*(1-pi)+f*pi*piTrans[ind[0],ind[1]])+\
+            counts[ind[2]]*log(pi*(f*piTrans[ind[0],ind[2]]+(1-f)*\
+                                   piTrans[ind[1],ind[2]]))+\
+            counts[ind[3]]*log(pi*(f*piTrans[ind[0],ind[3]]+(1-f)*\
+                                   piTrans[ind[1],ind[3]]))
     return(loglik)
 
 
 def lik(f, counts, pi=2.17e-3, piTrans=transMatrix):
     ind = counts.argsort()[::-1]
     lik = ((f*(1-pi)+(1-f)*pi*piTrans[ind[1],ind[0]])**counts[ind[0]])*\
-	    (((1-f)*(1-pi)+f*pi*piTrans[ind[0],ind[1]])**counts[ind[1]])*\
-	    ((pi*(f*piTrans[ind[0],ind[2]]+(1-f)*piTrans[ind[1],ind[2]]))**counts[ind[2]])*\
-	    ((pi*(f*piTrans[ind[0],ind[3]]+(1-f)*piTrans[ind[1],ind[3]]))**counts[ind[3]])
+            (((1-f)*(1-pi)+f*pi*piTrans[ind[0],ind[1]])**counts[ind[1]])*\
+            ((pi*(f*piTrans[ind[0],ind[2]]+(1-f)*\
+                  piTrans[ind[1],ind[2]]))**counts[ind[2]])*\
+            ((pi*(f*piTrans[ind[0],ind[3]]+(1-f)*\
+                  piTrans[ind[1],ind[3]]))**counts[ind[3]])
     return(lik)
 
 def logLikHomo(counts, pi=2.17e-3, piTrans=transMatrix):
@@ -56,52 +60,49 @@ def logLikHomo(counts, pi=2.17e-3, piTrans=transMatrix):
     """
     ind = counts.argsort()[::-1]  
     loglik = counts[ind[0]]*log(1-pi)+counts[ind[1]]*\
-	    log(pi*piTrans[ind[0],ind[1]])+counts[ind[2]]*log(pi*piTrans[ind[0],ind[2]])+\
-	    counts[ind[3]]*log(pi*piTrans[ind[0], ind[3]])
+            log(pi*piTrans[ind[0],ind[1]])+counts[ind[2]]*\
+            log(pi*piTrans[ind[0],ind[2]])+\
+            counts[ind[3]]*log(pi*piTrans[ind[0], ind[3]])
     return(loglik)
 
 
 def likHomo(counts, pi=2.17e-3, piTrans=transMatrix):
     ind = counts.argsort()[::-1]
     lik = ((1-pi)**counts[ind[0]])*\
-	    ((pi*piTrans[ind[0],ind[1]])**counts[ind[1]])*\
-	    ((pi*piTrans[ind[0],ind[2]])**counts[ind[2]])*\
-	    ((pi*piTrans[ind[0],ind[3]])**counts[ind[3]])
+            ((pi*piTrans[ind[0],ind[1]])**counts[ind[1]])*\
+            ((pi*piTrans[ind[0],ind[2]])**counts[ind[2]])*\
+            ((pi*piTrans[ind[0],ind[3]])**counts[ind[3]])
     return(lik)
 
 
 def ratioLik(counts):
     f_max = optimize.fminbound(lambda x: -logLik(x, counts), 0.5,1, xtol=1e-8,
-	    disp=0)
+                               disp=0)
     L_null=logLik(0.5, counts)
-    L_max = logLik(f_max, counts)    
+    L_max = logLik(f_max, counts)
     test_stat = -2*(L_null - L_max)
     return(stats.chi2.sf(test_stat, 1)) 
 
 
 
 def isHet(counts, prior=1):
-    """ 
-	Infers if the genotype is a Het or not at that particular base position
-	not accurate at really imbalanced alleles and high coverage
+    """ Infers if the genotype is a Het or not at that particular base position
+    not accurate at really imbalanced alleles and high coverage
     """
     # If statement is necessary for really high read coverage
     if sum(counts) >= 150:
-	if float(max(counts))/sum(counts)>=0.95: 
-	    return False
-	else:
-	    return True
+        if float(max(counts))/sum(counts)>=0.95:
+            return False
+        else:
+            return True
     else:
-	logLik_het = logLik(0.5, counts)
-	p_D =likHomo(counts)+lik(0.5,counts)
-	p_D = log(p_D)
-	post_prob = exp(logLik_het+log(prior)-p_D)
-	if post_prob >= 0.5: return True
-	else: return False
+        logLik_het = logLik(0.5, counts)
+        p_D =likHomo(counts)+lik(0.5,counts)
+        p_D = log(p_D)
+        post_prob = exp(logLik_het+log(prior)-p_D)
+        if post_prob >= 0.5: return True
+        else: return False
 
 
 def err_handler(type, flag):
     pass
-    
-
-    

@@ -233,9 +233,12 @@ def main():
         # something that Hadoop will be very good at.
         #
         ##################################################################
-
-        region = str(line[0])
-        position = int(line[2])
+        if options.inputisvcfile:
+            region = str(line[0])
+            position = int(line[1])
+        else:
+            region = str(line[0])
+            position = int(line[2])
 
         for bamfile, bamNames in map(None, bam_files, bam_Names):
             # :TODO in the VCF and bed files make sure to type the attributes
