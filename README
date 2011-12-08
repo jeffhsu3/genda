@@ -10,6 +10,9 @@ External Library Requirments:
 6. Scipy
 7. bx-python - interval trees for python
 8. MOODS - PWM matching
+9. Tabix
+10. pandas
+
 
 
 Other useful tools:

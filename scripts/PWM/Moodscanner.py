@@ -54,7 +54,7 @@ def main():
     if options.stdbg:
         bgt = [0.25,0.25,0.25,0.25]
 
-    # Construct Matrices to search and files to write to.  
+    # Construct Matrices to search and files to write to.
     for k in index.keys():
         if options.specific:
             if k == options.specific:
@@ -89,11 +89,12 @@ def main():
             for position,score in r:
                 start, end, strand = strand_adjust(position,
                                                    sizes[under20names[n]])
-
+                # Add option to round the score values.  Defaulting to int atm
+                # since bedToBigBed only accepts integer values....
                 fileout[under20names[n]].write('\t'.join([chrom.name,
                                                           str(start), str(end),
                                                           under20names[n],
-                                                          str(score), strand,
+                                                          str(int(score*100)), strand,
                                                           '\n']))
 
         #Run over 20s
@@ -108,7 +109,7 @@ def main():
                                                    sizes[over20names[n]])
                 fileout[over20names[n]].write('\t'.join([chrom.name, str(start),
                                                          str(end),over20names[n],
-                                                         str(score),strand,
+                                                         str(int(score*100)),strand,
                                                          '\n']))
 
 

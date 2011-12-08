@@ -59,12 +59,6 @@ def read_and_Kent_index(filename):
                 end = int(p_line[1])
                 kent_bin = binFromRangeStandard(start, end)
             chr_dict[p_line[0]][kent_bin].append(GTab(start, end))
-            """
-            if debug > 100000:
-                break
-            else:
-                debug += 1
-            """
     return(chr_dict)
 
 def get_overlaps_counts(region, start, end, tab_map):

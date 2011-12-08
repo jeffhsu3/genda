@@ -1,0 +1,7 @@
+Toolchain:
+    python Moodscanner.py matrix_list $REF #outputs out.bed
+    sort out.bed -k1,1 -k2,2n
+    # BED to BigBed to visualize
+    bedToBigBed chrom.sizes bedfile BigBed.out
+    # Need a metric to assess quality, p-value adjustments suck balls. 
+

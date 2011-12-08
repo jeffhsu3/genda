@@ -21,32 +21,31 @@ w = open(args[1], 'w')
 
 def main():
     for line in bed:
-	scores = []
-	l1 = line.strip().split('\t')
-	chrom = l1[0]
-	start = int(l1[1])
-	end = int(l1[2])
-	start += int(options.pad)
-	end -= int(options.pad)
+        scores = []
+        l1 = line.strip().split('\t')
+        chrom = l1[0]
+        start = int(l1[1])
+        end = int(l1[2])
+        start += int(options.pad)
+        end -= int(options.pad)
 
-	try:
-	    #Finds all matching results
-	    res = fc.query(chrom, start, end)
-	    
-	    #Avereges the results
-	    total = 0
-	    howmany = 0
-	    for num,entry in enumerate(res):
-		howmany = num+1
-		total += int(entry[-1])
-	    if howmany == 0:
-		avg =0
-	    else:
-	       avg = total/howmany
-	#If a certain chromosome or haplotype is not found
-	except tabix.error:
-	    avg = 0
-	w.write('\t'.join(l1)+'\t'+str(avg)+'\n')
+        try:
+            #Finds all matching results
+            res = fc.query(chrom, start, end)
+            #Avereges the results
+            total = 0
+            howmany = 0
+            for num,entry in enumerate(res):
+                howmany = num+1
+                total += int(entry[-1])
+            if howmany == 0:
+                avg =0
+            else:
+                avg = total/howmany
+        #If a certain chromosome or haplotype is not found
+        except tabix.error:
+            avg = 0
+        w.write('\t'.join(l1)+'\t'+str(avg)+'\n')
 
 if __name__ == '__main__':
     main()
