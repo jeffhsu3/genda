@@ -8,5 +8,6 @@
 *.DS_Store
 *.swp
 *.out
+*.c
 
 /build

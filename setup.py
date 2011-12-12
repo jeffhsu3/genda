@@ -21,15 +21,18 @@ if use_cython:
     ext_modules += [
         Extension("pySeq.transcripts.exon_utils",
                   ["pySeq/transcripts/exon_utils.pyx" ]),
+        Extension("pySeq.pysam_callbacks.allele_counter",
+            ["pySeq/pysam_callbacks/allele_counter.pyx"]),
     ]
     cmdclass.update({'build_ext': build_ext})
 else:
     ext_modules += [
         Extension("pySeq.transcripts.exon_utils",
                   ["pySeq/transcripts/exon_utils.c"]),
+        Extension("pySeq.pysam_callbacks.allele_counter",
+            ["pySeq/pysam_callbacks.allele_counter.c"]),
     ]
 
-print(cmdclass)
 metadata = {'name':name,
             'version': version,
             'cmdclass': cmdclass,

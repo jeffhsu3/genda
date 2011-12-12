@@ -1,7 +1,13 @@
-"""
-"""
-"""
+import numpy as np
+
+cimport numpy as np
+DTYPE = np.int
+
+ctypedef np.int_t DTYPE_t
+
 class AlleleCounter():
+    """ Gets the allele counts 
+    """
     BASE_INDEX = {'A':0, 'a':0, 'C':1, 'c':1, 'G':2, 'g':2, 'T':3, 't':3}
     def __init__(self, region, position, phredThreshold=0):
         self.region = region
@@ -10,6 +16,8 @@ class AlleleCounter():
         self.counts = np.zeros(4, dtype=np.uint32)
 
     def __call__(self, alignment, position = None, phredThreshold=None):
+        cdef int index
+        cdef int inserts
         if position == None: 
             position = self.position
         else: pass
@@ -21,12 +29,8 @@ class AlleleCounter():
         else:
             if 3 in [i[0] for i in alignment.cigar]:
                 t = [i[1] for i in alignment.cigar if i[0] == 3]
-                # print(len(t))
                 inserts = sum(t)
-                #print("Alignment Start: %i" % alignment.pos)
-                #print(alignment.seq)
                 index = position - inserts - alignment.pos - 1   
-                #print(index)
             else:
                 index = position - alignment.pos - 1   
             if index >= 0:
@@ -37,4 +41,3 @@ class AlleleCounter():
                     self.counts[base] += 1
                 else: pass
             else: pass
-"""
