@@ -1,5 +1,4 @@
-Aseries of tools for working with BAM files.  There are a lot of
-dependencies.
+My personal library for working with sequence data
 
 External Library Requirments:
 1. Cython
@@ -27,13 +26,15 @@ Different programs:
 1. Allelic Imbalance Estimation
 2. Allele Counts at bed/VCF/GTF Files
 3. Counts at genes, capable of dealing with junctions
-4. Creating alternate fasta sequences for accurate estimation of Allelic imbalance 
+4. Creating alternate fasta sequences for accurate estimation of Allelic
+imbalance (work in progress) 
 5. 
 
 Code Organization:
 
 pysam_callbacks
-folder containing classes to be used as callbacks for pysam.fetch
+folder containing classes to be used as callbacks for pysam.fetch and
+pysam.pileup
 
 Installation:
 

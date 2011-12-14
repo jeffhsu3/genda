@@ -21,10 +21,6 @@ class FakeAlignment(object):
 class testCounter(unittest.TestCase):
     def setUp(self):
         self.seq = "ATTAGGATAGATGATGATGA"
-        # A SNP in an intron will get picked up
-        snp_in_intron = FakeAlignment(25, self.seq, [(0,10), (3,100), (0,10)])
-        snp_in_second_exon = FakeAlignment(25, self.seq,[(0,10),(3,5),(0,10)])
-        snp_is_an_idel = ":TODO"
 
     def testRegular(self):
         regular_read = FakeAlignment(25, self.seq, [(0,20)])
@@ -38,6 +34,19 @@ class testCounter(unittest.TestCase):
         test = AlleleCounter("chr1", 35)
         test(snp_in_intron)
         np.testing.assert_equal(test.counts, np.asarray([0,0,0,0]))
+
+    def testSecondExon(self):
+        snp_in_second_exon = FakeAlignment(25, self.seq,[(0,10),(3,5),(0,10)])
+        test = AlleleCounter("chr1", 47)
+        test(snp_in_second_exon) 
+        np.testing.assert_equal(test.counts, np.asarray([1,0,0,0]))
+
+    """
+    Not yet implemented
+    def testIndels(self):
+        indel = FakeAlignment(25, self.seq, [(0,20), (3, 45), (0,10)])
+        pass
+    """
 
 
 

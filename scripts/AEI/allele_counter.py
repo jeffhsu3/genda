@@ -44,6 +44,7 @@ class AlleleCounter():
         self.position = int(position)
         self.phredThreshold = phredThreshold
         self.counts = np.zeros(4, dtype=np.uint32)
+        self.debugcounts = 0
 
     def __call__(self, alignment, position = None, phredThreshold=None):
         if position == None: 
@@ -52,20 +53,25 @@ class AlleleCounter():
         if phredThreshold == None: 
             qualT = self.phredThreshold
         else: pass
-        if alignment.is_duplicate or alignment.mapq <= 50:
+        #if alignment.is_duplicate or alignment.mapq <= 50:
+        if alignment.mapq <= 0:
             pass
         else:
             if 3 in [i[0] for i in alignment.cigar]:
                 t = [i[1] for i in alignment.cigar if i[0] == 3]
-                # print(len(t))
                 inserts = sum(t)
-                #print("Alignment Start: %i" % alignment.pos)
-                #print(alignment.seq)
+                # -1 to account for python 0-based index
                 index = position - inserts - alignment.pos - 1   
-                #print(index)
             else:
                 index = position - alignment.pos - 1   
             if index >= 0:
+                '''
+                print("Read align starts: %i" % alignment.pos)
+                print(alignment.seq)
+                print(index)
+                print(position)
+                print(alignment.seq[index])
+                '''
                 base = alignment.seq[index]
                 b_qual = alignment.qual[index]
                 if base != "N" and ord(b_qual)-33 > qualT:
@@ -112,7 +118,6 @@ def main():
 
     file_a = open(args[0],"rb")
 
-    # Handling of multiple BAM/SAM inputs
     if not options.input:
         bam_Names = args[1:]
     else:
@@ -134,12 +139,18 @@ def main():
     for line in file_a:
         counts = []
         c = []
+
         line = line.strip('\n').split('\t')
         # Counts is a list of numpy arrays
 
         if options.inputisvcfile:
             region = str(line[0])
             position = int(line[1]) # Start for a VCF file
+            if len(line[3]) > 1 or len(line[4]) > 1:
+                isIndel = True
+            else:
+                rsID.append(line[2])
+                isIndel = False
         else:
             region = str(line[0])
             position = int(line[2]) # End position
@@ -147,35 +158,50 @@ def main():
             if position - start != 1:
                 isIndel = True
             else: 
+                # Unfortunately the BED file does not specifiy this
                 rsID.append(line[-1])  
                 t += 1
                 isIndel = False
         
+        # This is horrible
+        cA = np.zeros(len(bam_files), dtype=np.uint32)
+        cC = np.zeros(len(bam_files), dtype=np.uint32)
+        cG = np.zeros(len(bam_files), dtype=np.uint32)
+        cT = np.zeros(len(bam_files), dtype=np.uint32)
+
         if not isIndel:
-            for bamfile, bamNames in map(None, bam_files, bam_Names):
-                # :TODO in the VCF and bed files make sure to type the attributes
+            for i, bamfile in enumerate(bam_files):
                 p_v = AlleleCounter(region, position,
                         phredThreshold=options.qual)
-
+                # -1 to convert 0-based which pysam uses
                 bamfile.fetch(p_v.region, p_v.position-1, p_v.position-1,
                         callback=p_v)
 
-                c.append(p_v.counts)
+                # c.append(p_v.counts)
+                cA[i] = p_v.counts[0]
+                cC[i] = p_v.counts[1]
+                cG[i] = p_v.counts[2]
+                cT[i] = p_v.counts[3]
 
-            c_m.append(c)
+            c_m.append(cA)
+            c_m.append(cC)
+            c_m.append(cG)
+            c_m.append(cT)
+        
         else: 
             # For right now
             pass
 
         # For testing purposes
         if options.D:
-            if debug > 500: break
+            if debug > 10: break
             else: debug += 1
         else:pass
-    
+    #print(c_m) 
     INDEX_BASE = ['A', 'C', 'G', 'T']
     out = {}
     out['counts'] = c_m
+    out['index'] = INDEX_BASE
     out['rsIDs'] = rsID
     pickle.dump(out, output)
     #counts_df = pd.DataFrame(counts_matrix)
