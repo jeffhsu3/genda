@@ -42,7 +42,7 @@ metadata = {'name':name,
             'packages':['pySeq', 'pySeq.stats',
                         'pySeq.parsing','pySeq.formats',
                         'pySeq.pysam_callbacks', 
-                       'pySeq.transcripts'],
+                       'pySeq.transcripts', 'pySeq.AEI'],
 }
 
 
