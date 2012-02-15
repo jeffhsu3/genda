@@ -10,6 +10,7 @@ try:
     from Cython.Distutils import build_ext
 except ImportError:
     use_cython = False
+    print("Cython not found")
 else:
     use_cython = True
 
