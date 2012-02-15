@@ -1,4 +1,5 @@
 """
+This module contains various pysam callback methods for filtering etc.
 """
 """
 class AlleleCounter():

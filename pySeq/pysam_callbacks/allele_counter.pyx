@@ -6,9 +6,9 @@ DTYPE = np.int
 ctypedef np.int_t DTYPE_t
 
 class AlleleCounter():
-    """ Counts the various alleles at a given position.  
-    
-    usage: 
+    """ Counts the various alleles at a given position.
+
+    usage:
     import pysam
     t = AlleleCounter("chr1", snp-position - 1)
 
@@ -25,15 +25,15 @@ class AlleleCounter():
     def __call__(self, alignment, int position = None, 
                  int phredThreshold = None,
                  isIndel = None):
-        
+
         cdef int index
         cdef int inserts
 
         # Settting up variables
-        if position == None: 
+        if position == None:
             position = self.position
         else: pass
-        if phredThreshold == None: 
+        if phredThreshold == None:
             qualT = self.phredThreshold
         else: pass
         if alignment.is_duplicate or alignment.mapq <= 50:

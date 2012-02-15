@@ -6,6 +6,7 @@ import heapq
 
 import numpy as np
 import pandas as pd
+from scipy.stats import binom
 import matplotlib.pyplot as plt
 
 def generate_mi(rsIDs):
@@ -19,7 +20,7 @@ def generate_mi(rsIDs):
 class AEIData(object):
     """ Multi-index implementation of CountMatrix
     """
-    
+
     def __init__(self, filename):
         data = self._load(filename)
         rsIDs = data['rsIDs']
@@ -27,23 +28,23 @@ class AEIData(object):
         self.df = pd.DataFrame(data['counts'], index=generate_mi(rsIDs))
         self.df = self.df/float(1)
         self.rsIDs = rsIDs
-    
+
     def _load(self, filename):
         """ Loads a count matrix that is outputed from allele_counter.py
         """
         pkl_file = open(filename, 'rb')
         return(pickle.load(pkl_file))
-    
+
     def set_genotypes(self, genotypes):
         """ Genotypes is a pandas Dataframe containing genotype information
         from the samples
         """
-        #:TODO try some column automatching
+        #:TODO try some column (sample) automatching.  Not always applicable however.  
         self.genotypes = genotypes.reindex(index = self.rsIDs)
-    
+
     def set_annotations(self, annotationfile):
         """ Loads a VCF SNP annotation file from dbSNP and automatically aligns
-        data from the new set with the old set.  
+        data from the new set with the old set.
         """
         # Check if it is already a DataFrame
         # VCFs and BEDFiles
@@ -55,13 +56,13 @@ class AEIData(object):
         index = [gp_keys[0] for gp_keys in grouped.groups.values()]
         temp = annot.reindex(index)
         temp.index = temp["ID"]
-        
+
         # Drop these extraneous columns
         temp = temp.drop(["QUAL", "FILTER", "INFO", "ID"], axis=1)
-        
+
         # Reindex according to the count data
         self.annot = temp.reindex(self.rsIDs)
-        
+
         # Deal with mismatches in the annotation file used to generate
         # Need to use CHROM since it's the only float value, and np.NaN is
         # used for missing values.
@@ -70,7 +71,7 @@ class AEIData(object):
         self.genotypes = self.genotypes.reindex(self.annot.index)
         self.rsIDs = list(self.annot.index)
 
-    def mask(self, count_threshold = 20):
+    def mask(self, count_threshold = 20, impute_threshold = 0.5):
         """ Mask locations that aren't heterozygotes and the loctions that
         don't meet a read count threshold.
         """
@@ -88,15 +89,36 @@ class AEIData(object):
             sums = (ref + alt) < count_threshold
             ref[np.logical_or(hets, sums)] = np.NaN
             alt[np.logical_or(hets, sums)] = np.NaN
+            self.binom_p = pd.DataFrame(binom.sf(alt - 1, ref + alt, 0.5), index = ref.index,
+                    self.df.columns)
             self.ratio = ref/((ref+alt)/float(1))
         except AttributeError:
             print("Need to run set_annotations and set_genotyeps first")
 
+    def binom_test(self):
+        pass
+
+    def to_R_dataframe(self):
+        """ Converts
+        """
+        pass
+
+    def to_UCSC_track(self):
+        """ Creates a bedfile with the combined p-values at each of the SNPs
+        """
+        pass
+
+    def to_SQL(self):
+        """ Write the data frame to SQL.
+        """
+        pass
+
+
 class CountMatrix(object):
     """ Count Matrix holds counts from sequencing data
     """
-    
-    
+
+
     def __init__(self, filename):
         data = self._load(filename)
         # Might implement this in the future as a multi_index
