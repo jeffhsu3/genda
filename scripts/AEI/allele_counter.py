@@ -1,30 +1,19 @@
 #!/usr/bin/env python
 
-""" Gets the read bases at each position specified by the first argument, which
-is a VCF/BED/GFF/GTF file, from an indexed BAMfile/s or pileup/s:
-    1. Whether the loci is heterzygous or homozygous if the genotyping is not
-    known
-    2. The p-value of the loci exhibiting allelic imbalance if the loci is
-    heterzygous.
+""" Gets the read counts at each position specified by the first argument, which
+is a VCF/BED/GFF/GTF file, from an indexed BAMfile/s or pileup/s and loads into a python pickle file:
 
 Usage:
-    python getReads.py bedfile/vcf bamfile1 [bamfile2 ...] -o OUTPUT
+    python getReads.py bedfile/vcffile bamfile1 [bamfile2 ...] -o OUTPUT
 
-Limtations: Doesn't accurately account paralogous gene expression, which can
-manifest itself in allelic imbalance.  One way would be to have an input file
-of all paralogous genes and calculated the probability of a read mismatching
-and then the liklihood that it is something not valulable.
-
-:TODO Do comparison with reference allele
-:TODO Account for mis-alignments of the minor allele
-:TODO Need to handle indel
+:TODO Need to handle indels
 :TODO add an option that includes a gene annotation file
 :TODO add support for pileup files
 :TODO also how does PCR duplicates affect?
-:TODO makes this more modular and testable
-:TODO also make an R version?
+:TODO makes this more modular and testable, especially test for changes due to pysam API changes
 
 :TODO Output the results into a VCF file
+
 
 Written by Jeffrey Hsu
 2010
@@ -35,8 +24,11 @@ import optparse, pickle
 import pysam
 import numpy as np
 
+def cigarParser(cigarList):
+    pass
+
 class AlleleCounter():
-    """ Gets the allele counts 
+    """ Gets the allele counts
     """
     BASE_INDEX = {'A':0, 'a':0, 'C':1, 'c':1, 'G':2, 'g':2, 'T':3, 't':3}
     def __init__(self, region, position, phredThreshold=0):
@@ -47,31 +39,25 @@ class AlleleCounter():
         self.debugcounts = 0
 
     def __call__(self, alignment, position = None, phredThreshold=None):
-        if position == None: 
+        if position == None:
             position = self.position
         else: pass
-        if phredThreshold == None: 
+        if phredThreshold == None:
             qualT = self.phredThreshold
         else: pass
         #if alignment.is_duplicate or alignment.mapq <= 50:
         if alignment.mapq <= 0:
             pass
         else:
+            # This needs testing
             if 3 in [i[0] for i in alignment.cigar]:
                 t = [i[1] for i in alignment.cigar if i[0] == 3]
                 inserts = sum(t)
                 # -1 to account for python 0-based index
-                index = position - inserts - alignment.pos - 1   
+                index = position - inserts - alignment.pos - 1
             else:
-                index = position - alignment.pos - 1   
+                index = position - alignment.pos - 1
             if index >= 0:
-                '''
-                print("Read align starts: %i" % alignment.pos)
-                print(alignment.seq)
-                print(index)
-                print(position)
-                print(alignment.seq[index])
-                '''
                 base = alignment.seq[index]
                 b_qual = alignment.qual[index]
                 if base != "N" and ord(b_qual)-33 > qualT:
@@ -81,10 +67,6 @@ class AlleleCounter():
             else: pass
 
 def main():
-    """ Main loop that iterates over the desired loci to calculate Aellic
-    Imbalance
-
-    """
 
 
     #################################################################
@@ -94,7 +76,7 @@ def main():
     p = optparse.OptionParser(__doc__)
     p.add_option("-o", "--output", dest="filename", help="write \
             report to FILE")
-    p.add_option("-I", "--input", dest="input", 
+    p.add_option("-I", "--input", dest="input",
             help="BAM files are listed in a file instead of command line\
                     arguments")
     p.add_option("-G", "--genotype", dest="G", help=\
@@ -157,13 +139,12 @@ def main():
             start = int(line[1])
             if position - start != 1:
                 isIndel = True
-            else: 
+            else:
                 # Unfortunately the BED file does not specifiy this
-                rsID.append(line[-1])  
+                rsID.append(line[-1])
                 t += 1
                 isIndel = False
-        
-        # This is horrible
+
         cA = np.zeros(len(bam_files), dtype=np.uint32)
         cC = np.zeros(len(bam_files), dtype=np.uint32)
         cG = np.zeros(len(bam_files), dtype=np.uint32)
@@ -187,8 +168,8 @@ def main():
             c_m.append(cC)
             c_m.append(cG)
             c_m.append(cT)
-        
-        else: 
+
+        else:
             # For right now
             pass
 

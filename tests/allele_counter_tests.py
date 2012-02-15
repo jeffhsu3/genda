@@ -5,7 +5,7 @@ import numpy as np
 from pySeq.pysam_callbacks.allele_counter import AlleleCounter
 
 class FakeAlignment(object):
-    """ Simulating sequencing reads 
+    """ Simulating sequencing reads
     """
 
     def __init__(self, position, seq, cigar):
@@ -38,7 +38,7 @@ class testCounter(unittest.TestCase):
     def testSecondExon(self):
         snp_in_second_exon = FakeAlignment(25, self.seq,[(0,10),(3,5),(0,10)])
         test = AlleleCounter("chr1", 47)
-        test(snp_in_second_exon) 
+        test(snp_in_second_exon)
         np.testing.assert_equal(test.counts, np.asarray([1,0,0,0]))
 
     """
