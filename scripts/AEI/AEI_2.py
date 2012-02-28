@@ -97,6 +97,7 @@ class lociInformation():
         self.phredThreshold = phredThreshold
         self.counts = np.zeros(4, dtype=np.uint32)
 
+
     def __call__(self, pileups, position=None,
         phredThreshold=None, genotype=None):
         """ Genotype file contains the infromation the actualy genotyping
