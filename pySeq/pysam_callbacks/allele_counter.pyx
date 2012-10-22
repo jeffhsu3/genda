@@ -24,7 +24,8 @@ class AlleleCounter():
         self.phredThreshold = phredThreshold
         self.counts = np.zeros(4, dtype=np.uint32)
 
-    def __call__(self, alignment, position = None, phredThreshold = None,
+    def __call__(self, alignment, int position = None, 
+                 int phredThreshold = None,
                  isIndel = None):
 
         cdef int index

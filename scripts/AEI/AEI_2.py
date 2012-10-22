@@ -97,6 +97,7 @@ class lociInformation():
         self.phredThreshold = phredThreshold
         self.counts = np.zeros(4, dtype=np.uint32)
 
+
     def __call__(self, pileups, position=None,
         phredThreshold=None, genotype=None):
         """ Genotype file contains the infromation the actualy genotyping
@@ -214,7 +215,7 @@ def main():
                 rsID[line[-1]] = t 
                 t += 1
                 isIndel = False
-        
+
         if not isIndel:
             for bamfile, bamNames in map(None, bam_files, bam_Names):
                 # :TODO in the VCF and bed files make sure to type the attributes
@@ -222,7 +223,7 @@ def main():
                                           phredThreshold=options.qual)
                 bamfile.pileup(variant.region, variant.position,
                                variant.position+1, callback=variant)
-                
+
 
                 counts.append(variant.counts)
 
@@ -236,7 +237,7 @@ def main():
             if debug > 500: break
             else: debug += 1
         else:pass
-    
+
     out = {}
     out['counts'] = counts_matrix
     out['rsIDs'] = rsID
