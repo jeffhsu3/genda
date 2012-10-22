@@ -28,20 +28,20 @@ class FastA(object):
         try:
             current = self.fh.tell()
             length = end - start + 1
-            newlines = start/50  
+            newlines = start/50
             # Calculates how many newlines are in the query
             if start%50 == 0:
                 # Case where it starts where a new line should be
-                q_nl = length/50 + 1  
-                start = start - 2 
+                q_nl = length/50 + 1
+                start = start - 2
                 length = length + q_nl
-            elif (start+length) == 0:  
+            elif (start+length) == 0:
                 # Case where ends
-                q_nl = length/50  
+                q_nl = length/50
                 start = start - 1
                 length = length + q_nl+ 1
             else:
-                q_nl = length/50  
+                q_nl = length/50
                 start = start - 1
                 length = length + q_nl
             self.fh.seek(self.index[region]+start+newlines)

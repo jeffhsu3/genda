@@ -9,6 +9,7 @@
 *.swp
 *.out
 *.c
+*.o
 
 /build
 /doc/build

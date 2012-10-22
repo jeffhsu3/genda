@@ -3,6 +3,8 @@ import numpy as np
 cimport numpy as np
 DTYPE = np.int
 
+#from csamtools cimport *
+
 ctypedef np.int_t DTYPE_t
 
 class AlleleCounter():

@@ -6,6 +6,15 @@ version = '0.1'
 from distutils.core import setup
 from distutils.extension import Extension
 
+def make_ext(modname, pyxfilename):
+    import pysam, os
+    dirname = os.path.dirname( pysam.__file__)[:-len("pysam")]
+    return Extension(name = modname, sources = [pyxfilename],
+                    extra_link_args = [os.pth.join(dirname, "csamtools.so")],
+                    include_dirs = ['../samtools',
+                                    '../pysam',
+                                    ])
+
 try:
     from Cython.Distutils import build_ext
 except ImportError:
