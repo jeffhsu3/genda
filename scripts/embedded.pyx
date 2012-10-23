@@ -11,17 +11,15 @@ Author: Jeff Hsu
 """
 
 
-import optparse, sys
-#from csamtools cimport *
+import optparse
+
 cimport csamtools as csam
+
 from pySeq.parsing.fastA import FastA
+from pysam import Fastafile
+# For some reason csamtools.fastaFile isn't working for me
 
 import bcolors
-
-cdef handle_exons():
-    """
-    """
-    pass
 
 def main():
     p = optparse.OptionParser(__doc__)
@@ -37,11 +35,11 @@ def main():
     # File Inputs ####################################################
 
     samfile = csam.Samfile(args[0], 'rb')
-    fasta = FastA(args[1])
+    fasta = Fastafile(args[1])
 
     # :TODO add this program into the header
     if not options.o:
-        outfile = csam.Samfile(args[0].rstrip(".bam"), "wb", template=samfile)
+        outfile = csam.Samfile(args[0].rstrip(".bam") + "anon.bam", "wb", template=samfile)
     else:
         outfile = csam.Samfile(options.o, "wb", template=samfile)
 
@@ -53,44 +51,44 @@ def main():
     cdef int debug_num
     cdef int ref_id
     cdef int first_exon_len, second_exon_len, junction_len
-    cdef bytes new_string
+    cdef bytes new_string, first_exon, second_exon, chrom
     debug_num = 0
 
     for read in samfile:
         try:
-            # :TODO what are the other possibilities here
+            chrom = samfile.getrname(read.tid)
+        except ValueError:
+            # I think tophat puts unmapped reads as tid = -1 and that thses occur
+            # at the end
+            break
+        try:
+            # :TODO what are the other possibilities here, such as a read spanning
+            # multiple exons
             first_exon_len = read.cigar[0][1]
             junction_len = read.cigar[1][1]
             second_exon_len = read.cigar[2][1]
-            print(first_exon_len, junction_len, second_exon_len)
-            print('Exon junction')
-            # :TODO C string handling
-            first_exon = fasta.grabSequence(samfile.getrname(read.tid), read.pos+1,
+            first_exon = fasta.fetch(chrom, read.pos,
                     read.pos + first_exon_len).upper()
-            second_exon = fasta.grabSequence(samfile.getrname(read.tid),
+            second_exon = fasta.fetch(chrom,
                     read.pos + first_exon_len + junction_len,
                     read.pos + first_exon_len + junction_len + second_exon_len).upper()
             new_seq = first_exon + second_exon
-            print(read.seq)
-            print(bcolors.bcolors.WARNING + first_exon + bcolors.bcolors.ENDC\
-                    + bcolors.bcolors.OKBLUE + second_exon + bcolors.bcolors.ENDC)
         except IndexError:
-            new_seq = fasta.grabSequence(samfile.getrname(read.tid), read.pos+1, read.pos + read.qlen).upper()
-        #print(read.seq)
-        #print(bcolors.bcolors.WARNING + str(new_seq)+ bcolors.bcolors.ENDC)
+            new_seq = fasta.fetch(chrom, read.pos, read.pos + read.qlen).upper()
 
         read.seq = new_seq
         outfile.write(read)
 
 
 
-        if debug_num > 20000 and options.debug:
+        if debug_num > 10000 and options.debug:
             break
         else:
             debug_num += 1
 
     samfile.close()
     outfile.close()
+    fasta.close()
 
 
 
