@@ -17,7 +17,7 @@ def make_ext(modname, pyxfilename):
                                     ])
 
 
-ext_modules = [make_ext("bleh", "test_embed.pyx")]
+ext_modules = [make_ext("bleh", "embedded.pyx")]
 
 setup(
         name = 'Bleh',

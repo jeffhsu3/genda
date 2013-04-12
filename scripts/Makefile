@@ -14,6 +14,7 @@ LIBS=$(shell $(PYTHON) -c "from distutils import sysconfig; print(sysconfig.get_
 SYSLIB=$(shell $(PYTHON) -c "from distutils import sysconfig; print(sysconfig.get_config_var('SYSLIBS'))")
 
 
+# How to correctly find the source files for pysam?
 SAMTOOLS=/gen_local/hsuj/src/pysam/samtools/
 PYSAM=/gen_local/hsuj/src/pysam/pysam/
 

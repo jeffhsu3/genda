@@ -23,7 +23,7 @@ class FastA(object):
     def grabSequence(self, region, start, end):
         """Grabs the sequence in region:start-end from self.fh.  Need to adjust
         for multiple line lengths.  Also need to alter so it doesn't seek to
-        the beginning of the file each time.
+        the beginning of the file each time since most consecutive queries are sequenctial.
         """
         try:
             current = self.fh.tell()

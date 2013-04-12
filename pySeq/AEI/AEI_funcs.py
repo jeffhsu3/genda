@@ -9,6 +9,7 @@ import pandas as pd
 from scipy.stats import binom
 import matplotlib.pyplot as plt
 
+
 def generate_mi(rsIDs):
     """ Usefuls for reindexing for a new subset of rsIDS
     """
@@ -16,6 +17,7 @@ def generate_mi(rsIDs):
     temp_index = itertools.chain(*[[i]*4 for i in rsIDs])
     tuples = zip(temp_index, itertools.cycle(BASES))
     return pd.MultiIndex.from_tuples(tuples, names=['ID', 'BASE'])
+
 
 class AEIData(object):
     """ Multi-index implementation of CountMatrix
