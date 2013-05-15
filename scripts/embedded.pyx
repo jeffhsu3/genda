@@ -15,11 +15,10 @@ import optparse
 
 cimport csamtools as csam
 
-from pySeq.parsing.fastA import FastA
 from pysam import Fastafile
 # For some reason csamtools.fastaFile isn't working for me
 
-import bcolors
+#import bcolors
 
 def main():
     p = optparse.OptionParser(__doc__)
@@ -56,6 +55,7 @@ def main():
 
     for read in samfile:
         try:
+            # For a sorted file this should remain the same for most
             chrom = samfile.getrname(read.tid)
         except ValueError:
             # I think tophat puts unmapped reads as tid = -1 and that thses occur

@@ -13,3 +13,5 @@
 
 /build
 /doc/build
+
+tests/data/chrY.1000.vcf

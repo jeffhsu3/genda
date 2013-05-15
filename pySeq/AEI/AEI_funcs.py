@@ -91,8 +91,7 @@ class AEIData(object):
             sums = (ref + alt) < count_threshold
             ref[np.logical_or(hets, sums)] = np.NaN
             alt[np.logical_or(hets, sums)] = np.NaN
-            self.binom_p = pd.DataFrame(binom.sf(alt - 1, ref + alt, 0.5), index = ref.index,
-                    self.df.columns)
+            self.binom_p = pd.DataFrame(binom.sf(alt - 1, ref + alt, 0.5), columns=self.df.columns,index=ref.index)
             self.ratio = ref/((ref+alt)/float(1))
         except AttributeError:
             print("Need to run set_annotations and set_genotyeps first")
