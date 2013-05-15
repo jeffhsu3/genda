@@ -347,7 +347,7 @@ class VCF(object):
                 return np.NaN
             except ZeroDivisionError:
                 return np.NaN
-        allele_counts = [no_counts(i) for i in line]
+        allele_counts = [no_counts(i) for i in genotype]
         return(allele_counts)
 
     # Convienence Functions - Not sure if this is a good thing
