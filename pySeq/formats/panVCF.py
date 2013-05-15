@@ -299,8 +299,8 @@ class VCF(object):
         """
 
         non_ref = np.logical_not(self.vcf.ix[rsID, 9:] == 0)
-        nans = np.isnan(np.asarray(dataframe.ix[rsID, 9:], dtype=np.float))
-        return(dataframe.columns[9:][np.logical_xof(non_ref, nans)])
+        nans = np.isnan(np.asarray(self.vcf.ix[rsID, 9:], dtype=np.float))
+        return(self.vcf.columns[9:][np.logical_xor(non_ref, nans)])
 
 
 
@@ -347,7 +347,7 @@ class VCF(object):
                 return np.NaN
             except ZeroDivisionError:
                 return np.NaN
-        allele_counts = [no_counts(i) for i in line]
+        allele_counts = [no_counts(i) for i in genotype]
         return(allele_counts)
 
     # Convienence Functions - Not sure if this is a good thing
