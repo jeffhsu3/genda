@@ -299,8 +299,8 @@ class VCF(object):
         """
 
         non_ref = np.logical_not(self.vcf.ix[rsID, 9:] == 0)
-        nans = np.isnan(np.asarray(dataframe.ix[rsID, 9:], dtype=np.float))
-        return(dataframe.columns[9:][np.logical_xof(non_ref, nans)])
+        nans = np.isnan(np.asarray(self.vcf.ix[rsID, 9:], dtype=np.float))
+        return(self.vcf.columns[9:][np.logical_xor(non_ref, nans)])
 
 
 
