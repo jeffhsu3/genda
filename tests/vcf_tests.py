@@ -12,6 +12,11 @@ class TestLoadingVCF(unittest.TestCase):
 
     def testSamples(self):
         self.assertEqual(len(self.VCF.samples), 526)
+        self.assertEqual(self.VCF.info[0][1],'1')
+        self.assertEqual(self.VCF.gformat[0],'GT')
+        self.assertEqual(self.VCF.novel[0],'Y_2649856_A')
+        self.assertEqual(VCF.list_samples_with_alternate_allele(self.VCF,'rs11575897')[-1],'NA19088')
+        self.assertEqual(len(VCF.list_samples_with_alternate_allele(self.VCF,'rs11575897')),19)
 
     def testInfo(self):
         pass
