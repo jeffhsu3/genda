@@ -68,5 +68,5 @@ class VCFfile(object):
     def __parse(self,line):
         """Parses a VCF line and returns a collection
         """
-        line = variant.strip('\n').split('\t') 
+        line = variant.strip('\n').split('\t')
         return line

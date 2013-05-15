@@ -1,5 +1,7 @@
 """ Functions for working with VCF files.  Each function either takes a VCF or
 a line from a VCF file
+
+Jeff Hsu
 """
 
 import sys
@@ -7,6 +9,30 @@ from itertools import cycle
 
 import numpy as np
 import pandas as pd
+def parse_chr(entry):
+    try:
+        chrom = int(entry.lstrip("chr"))
+        return(chrom)
+    except ValueError:
+        print("Chromosomes must be numeric")
+
+
+
+def parse_geno(entry):
+    """ Need to somehow keep phase, maybe use multi_index, but only
+    works if haplotype is contigous across whole section.  Maybe
+    groups to denote haplotype regions?
+
+    """
+    g = entry.split(":")[0]
+    if g == "0/0" or g == "0|0" or g == '0':
+        return 0
+    elif g == "1/1" or g == "1|1" or g=='1':
+        return 2
+    elif g == "0/1" or g == "0|1":
+        return 1
+    else:
+        return np.NaN
 
 class VCF(object):
     """ A pandas dataframe wrapper for VCF files.
@@ -14,7 +40,7 @@ class VCF(object):
 
 
     def __init__(self, vcf_file, chunksize = None, allelic_ratio=False,
-                haplotypes = False):
+                haplotypes = False, chrom_converter=None):
         """ Initialize with a VCF file with genotyping information
         """
         fh = open(vcf_file)
@@ -25,18 +51,15 @@ class VCF(object):
         self.samples = samples
         self.info_dict = []
 
+        sex_chromosomes = ['X', 'Y']
 
-        def parse_chr(entry):
-            try:
-                chrom = int(entry.lstrip("chr"))
-                return(chrom)
-            except ValueError:
-                print("Chromosomes must be numeric")
 
-        #convertor = dict((k + 9 , parse_geno) for k in range(len(samples)))
-        #convertor = dict((k + 9 , allele_ratio) for k in range(len(samples)))
+
         convertor = {}
-        convertor[0] = parse_chr
+        convertor = dict((k + 9 , parse_geno) for k in range(len(samples)))
+        #convertor = dict((k + 9 , allele_ratio) for k in range(len(samples)))
+        if chrom_converter:
+            convertor[0] = chrom_converter
         #convertor["INFO"] = self._parse_info
         self.vcf = pd.read_table(vcf_file, sep="\t",
                                  skiprows = xrange(num_meta),
@@ -44,9 +67,11 @@ class VCF(object):
                                  chunksize = chunksize,
                                 )
 
+        self.vcf.rename(columns = {'#CHROM': 'CHROM'}, inplace=True)
+
         rsID = self.vcf["ID"]
         novel = [str(i) + "_" + str(j) + "_" + str(k) for (i, j, k)\
-                 in zip(list(self.vcf["#CHROM"][rsID=="."]),
+                 in zip(list(self.vcf["CHROM"][rsID=="."]),
                         list(self.vcf["POS"][rsID == "."]),
                         list(self.vcf["ALT"][rsID == "."])
                        )
@@ -54,7 +79,6 @@ class VCF(object):
         self.novel = novel
         rsID[rsID == "."] = np.asarray(novel)
         self.vcf.index = pd.Index(rsID)
-
         info_dict = self._split_info(self.vcf.INFO)
 
         # Parsing the INFO
@@ -77,13 +101,13 @@ class VCF(object):
             except KeyError:
                 return('')
 
-
+        # Need a better way to do this
         for i in self.info:
             if i[2] == np.bool:
                 info_field = pd.Series(np.asarray(
                     [flag_parse(k, i[0]) for k in info_dict],
                                 dtype = i[2]), index = self.vcf.index)
-                self.vcf[i[0]] = info_field
+                #self.vcf[i[0]] = info_field
             elif i[1] > 1:
                 # :TODO This needs to be fixed
                 pass
@@ -108,26 +132,10 @@ class VCF(object):
                 info_field = pd.Series(np.asarray([k[i[0]] for k in info_dict],
                                                 dtype = i[1]),
                                     index = self.vcf.index)
-                self.vcf[i[0]] = info_field
-
+                #self.vcf[i[0]] = info_field
         del self.vcf['INFO']
         del self.vcf['ID']
         # Parse GENO
-        def _parse_geno(entry):
-            """ Need to somehow keep phase, maybe use multi_index, but only
-            works if haplotype is contigous across whole section.  Maybe
-            groups to denote haplotype regions?
-
-            """
-            g = entry.split(":")[0]
-            if g == "0/0" or g == "0|0":
-                return 0
-            elif g == "1/1" or g == "1|1":
-                return 2
-            elif g == "0/1" or g == "0|1":
-                return 1
-            else:
-                return np.NaN
 
 
         def _parse_haplotype(entry):
@@ -179,6 +187,7 @@ class VCF(object):
                                      columns = haplo_index,
                                      index = self.vcf.index
                                     )
+        """
         for ind in self.samples:
             if haplotypes:
                 haps = [_parse_haplotype(i) for i in self.vcf[ind]]
@@ -199,6 +208,7 @@ class VCF(object):
                 pass
             else:
                 self.vcf[ind] = geno
+        """
 
         if 'AD' in self.gformat:
             del self.ar['temp']
@@ -385,6 +395,7 @@ def is_indel(line):
         return True
     else:
         return False
+
 
 
 
