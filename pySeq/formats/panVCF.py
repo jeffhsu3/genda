@@ -7,6 +7,7 @@ Jeff Hsu
 import sys
 from itertools import cycle
 
+import functools
 import numpy as np
 import pandas as pd
 def parse_chr(entry):
@@ -18,13 +19,13 @@ def parse_chr(entry):
 
 
 
-def parse_geno(entry):
+def parse_geno(entry,GT=0):
     """ Need to somehow keep phase, maybe use multi_index, but only
     works if haplotype is contigous across whole section.  Maybe
     groups to denote haplotype regions?
 
     """
-    g = entry.split(":")[0]
+    g = entry.split(":")[GT]
     if g == "0/0" or g == "0|0" or g == '0':
         return 0
     elif g == "1/1" or g == "1|1" or g=='1':
@@ -56,7 +57,7 @@ class VCF(object):
 
 
         convertor = {}
-        convertor = dict((k + 9 , parse_geno) for k in range(len(samples)))
+        #convertor = dict((k + 9 , parse_geno) for k in range(len(samples)))
         #convertor = dict((k + 9 , allele_ratio) for k in range(len(samples)))
         if chrom_converter:
             convertor[0] = chrom_converter
@@ -67,11 +68,14 @@ class VCF(object):
                                  chunksize = chunksize,
                                 )
 
-        self.vcf.rename(columns = {'#CHROM': 'CHROM'}, inplace=True)
+        pg=functools.partial(parse_geno,GT = self.vcf.ix[0,8].split(":").index("GT"))
+        self.vcf.geno = self.vcf.ix[:,9:].applymap(pg)
+
+        #self.vcf.rename(columns = {'#CHROM': 'CHROM'}, inplace=True)
 
         rsID = self.vcf["ID"]
         novel = [str(i) + "_" + str(j) + "_" + str(k) for (i, j, k)\
-                 in zip(list(self.vcf["CHROM"][rsID=="."]),
+                 in zip(list(self.vcf["#CHROM"][rsID=="."]),
                         list(self.vcf["POS"][rsID == "."]),
                         list(self.vcf["ALT"][rsID == "."])
                        )
@@ -79,6 +83,7 @@ class VCF(object):
         self.novel = novel
         rsID[rsID == "."] = np.asarray(novel)
         self.vcf.index = pd.Index(rsID)
+        self.vcf.geno.index = self.vcf.index
         info_dict = self._split_info(self.vcf.INFO)
 
         # Parsing the INFO
