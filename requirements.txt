@@ -1,14 +1,6 @@
 Cython==0.19.1
 argparse==1.2.1
-ipython==0.12.1
-matplotlib==1.1.0
 numpy==1.7.1
 pandas==0.11.0
-pySeq==0.1
 pysam==0.7.4
 python-dateutil==2.1
-pytz==2013b
-pyzmq==2.2.0
-six==1.3.0
-tornado==2.3
-wsgiref==0.1.2
