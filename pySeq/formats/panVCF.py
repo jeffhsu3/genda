@@ -7,6 +7,7 @@ Jeff Hsu
 import sys
 from itertools import cycle
 
+import functools
 import numpy as np
 import pandas as pd
 def parse_chr(entry):
@@ -18,13 +19,13 @@ def parse_chr(entry):
 
 
 
-def parse_geno(entry):
+def parse_geno(entry,GT=0):
     """ Need to somehow keep phase, maybe use multi_index, but only
     works if haplotype is contigous across whole section.  Maybe
     groups to denote haplotype regions?
 
     """
-    g = entry.split(":")[0]
+    g = entry.split(":")[GT]
     if g == "0/0" or g == "0|0" or g == '0':
         return 0
     elif g == "1/1" or g == "1|1" or g=='1':
@@ -56,7 +57,7 @@ class VCF(object):
 
 
         convertor = {}
-        convertor = dict((k + 9 , parse_geno) for k in range(len(samples)))
+        #convertor = dict((k + 9 , parse_geno) for k in range(len(samples)))
         #convertor = dict((k + 9 , allele_ratio) for k in range(len(samples)))
         if chrom_converter:
             convertor[0] = chrom_converter
@@ -67,11 +68,14 @@ class VCF(object):
                                  chunksize = chunksize,
                                 )
 
-        self.vcf.rename(columns = {'#CHROM': 'CHROM'}, inplace=True)
+        pg=functools.partial(parse_geno,GT = self.vcf.ix[0,8].split(":").index("GT"))
+        self.geno = self.vcf.ix[:,9:].applymap(pg)
+
+        #self.vcf.rename(columns = {'#CHROM': 'CHROM'}, inplace=True)
 
         rsID = self.vcf["ID"]
         novel = [str(i) + "_" + str(j) + "_" + str(k) for (i, j, k)\
-                 in zip(list(self.vcf["CHROM"][rsID=="."]),
+                 in zip(list(self.vcf["#CHROM"][rsID=="."]),
                         list(self.vcf["POS"][rsID == "."]),
                         list(self.vcf["ALT"][rsID == "."])
                        )
@@ -79,6 +83,7 @@ class VCF(object):
         self.novel = novel
         rsID[rsID == "."] = np.asarray(novel)
         self.vcf.index = pd.Index(rsID)
+        self.geno.index = self.vcf.index
         info_dict = self._split_info(self.vcf.INFO)
 
         # Parsing the INFO
@@ -359,6 +364,30 @@ class VCF(object):
     def __getitem__(self, val):
         self.vcf.ix
     """
+
+    def dendrogram(self):
+        from scipy.cluster.hierarchy import linkage, dendrogram
+        g = self.geno.copy()
+        X = g.as_matrix()
+        Z = linkage(X,'single')
+        dendrogram(Z)
+
+    def hardyweinberg(self, snp, excludeNan = True):
+        from scipy.stats import chisquare
+        if excludeNan:
+            n=sum([0 if np.isnan(x) else 1 for x in self.geno.ix[snp,:]])
+        else:
+            n=self.geno.ix[snp,:].size[1]
+        q = float(sum([0 if np.isnan(x) else x for x in self.geno.ix[snp,:]]))/(2*n)
+        p = 1-q
+        probs=[p**2,2*p*q,q**2]
+        exp=np.array([probs[0]*n,probs[1]*n,probs[2]*n])
+        obs=np.array([sum([1 if x == 0 else 0 for x in self.geno.ix[snp,:]]),sum([1 if x == 1 else 0 for x in self.geno.ix[snp,:]]),\
+                sum([1 if x == 2 else 0 for x in self.geno.ix[snp,:]])])
+        if chisquare(obs,exp)[1] > 0.05:
+            return True
+        else:
+            return False
 
 def pos_line_convert(line):
     """ Convert chr:pos into a integer
