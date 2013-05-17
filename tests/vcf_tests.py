@@ -17,6 +17,7 @@ class TestLoadingVCF(unittest.TestCase):
         self.assertEqual(self.VCF.novel[0],'Y_2649856_A')
         self.assertEqual(VCF.list_samples_with_alternate_allele(self.VCF,'rs11575897')[-1],'NA19088')
         self.assertEqual(len(VCF.list_samples_with_alternate_allele(self.VCF,'rs11575897')),19)
+        self.assertEqual(VCF.hardyweinberg('rs11575897'),False)
 
     def testInfo(self):
         pass
