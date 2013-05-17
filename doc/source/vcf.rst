@@ -2,14 +2,21 @@
 Working With VCFs
 *****************
 
+The VCF Class
+=============
+
+panVCF.VCF(file)
+    parameters:
+        file - The VCF file which you want to load into panVCF
+
 Genotypes
-=========
+---------
     VCF.geno
         Pandas dataframe of genotype data
 
 
 Hardy-Weinberg
-==============
+--------------
     VCF.hardyweinberg(snp, excludeNan=True)
         parameters:
             snp - name of the snp or locus to test
