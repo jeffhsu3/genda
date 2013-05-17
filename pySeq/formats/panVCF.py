@@ -382,8 +382,12 @@ class VCF(object):
         p = 1-q
         probs=[p**2,2*p*q,q**2]
         exp=np.array([probs[0]*n,probs[1]*n,probs[2]*n])
-        obs=np.array([sum([1 if x == 0 else 0 for x in self.geno.ix[snp,:]]),sum([1 if x == 1 else 0 for x in self.geno.ix[snp,:]]),\
+        if exclude Nan:
+            obs=np.array([sum([1 if x == 0 else 0 for x in self.geno.ix[snp,:]]),sum([1 if x == 1 else 0 for x in self.geno.ix[snp,:]]),\
                 sum([1 if x == 2 else 0 for x in self.geno.ix[snp,:]])])
+        else:
+            obs=np.array([sum([1 if x == 0 or np.isnan(x) else 0 for x in self.geno.ix[snp,:]]),\
+                    sum([1 if x == 1 else 0 for x in self.geno.ix[snp,:]]), sum([1 if x == 2 else 0 for x in self.geno.ix[snp,:]])])
         if chisquare(obs,exp)[1] > 0.05:
             return True
         else:
