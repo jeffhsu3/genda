@@ -511,7 +511,6 @@ class VCF(object):
         for c in final_diffs:
             d[c[0]] = [c[1], c[2], c[3]]
 
-        numppl = len(self.vcf.columns)-7
         for row in range(self.vcf.shape[0]):
             if newvcf.ix[row,0].endswith(chrom):
                 pos = self.vcf.ix[row,1]
@@ -633,8 +632,3 @@ def is_indel(line):
         return True
     else:
         return False
-
-
-
-
-
