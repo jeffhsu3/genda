@@ -6,10 +6,12 @@ Jeff Hsu
 
 import sys
 from itertools import cycle
-
+import Genotype
 import functools
 import numpy as np
 import pandas as pd
+import numba
+
 def parse_chr(entry):
     try:
         chrom = int(entry.lstrip("chr"))
@@ -38,7 +40,7 @@ def parse_geno(entry,GT=0):
     else:
         return np.NaN
 
-class VCF(object):
+class VCF(Genotype.Genotype):
     """ A pandas dataframe wrapper for VCF files.
     """
 
@@ -368,7 +370,7 @@ class VCF(object):
         self.vcf.ix
     """
 
-    def dendrogram(self):
+    '''def dendrogram(self):
         from scipy.cluster.hierarchy import linkage, dendrogram
         g = self.geno.copy()
         X = g.as_matrix()
@@ -394,7 +396,7 @@ class VCF(object):
         if chisquare(obs,exp)[1] > 0.05:
             return True
         else:
-            return False
+            return False'''
 
     def change_base(self, old_ref_file, new_ref_file, chrom):
         from copy import deepcopy

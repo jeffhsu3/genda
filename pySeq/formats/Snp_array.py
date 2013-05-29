@@ -2,9 +2,20 @@
 Jeffrey Hsu 2012
 """
 import gzip
-
+import Genotype
 import pandas as pd
 import numpy as np
+
+class SNP_array(Genotype.Genotype):
+    def __init__(self, zipfile, encoding = None):
+        
+        self.df = pd.read_csv(gzip.GzipFile(zipfile))
+        self.df.index = self.df.ix[:,'Snp.ID']
+        if encoding == None:
+            self.encoder = pd.Series(['A/G']*self.df.shape[0], index=self.df.index)
+        else:
+            self.encoder = encoding
+        self.geno = self.df.ix[:,4:].apply(_two_columns_per_individual_conversion ,encoder = self.encoder, axis=1)
 
 def combine_afib_with_hapmap(afib, hapmap):
     """
@@ -78,16 +89,19 @@ def _single_column_allele(genotype_array, **kwargs):
 
     return new_array
 
-def _two_columns_per_individual_conversion(genotype_array):
+def _two_columns_per_individual_conversion(genotype_array, encoder):
     """ Convert a dataframe containing a column with two alleles
 
     eg:  Ind1.A1    Ind1.A2    Ind2.A1 ...
             A          G          A
     """
-    encoding_dict = {genotype_array[0][0] : 0, genotype_array[0][2] : 1}
+    #genotype_array = pd.Series(['A/G'].extend(list(genotype_array)))
+    #encoding_dict = {genotype_array[0][0] : 0, genotype_array[0][2] : 1}
+    temp = encoder[genotype_array.name]
+    encoding_dict = {temp[0] : 0, temp[2] : 1}
     try:
-        recoded_1 = genotype_array[1::2].map(encoding_dict)
-        recoded_2 = genotype_array[2::2].map(encoding_dict)
+        recoded_1 = genotype_array[0::2].map(encoding_dict)
+        recoded_2 = genotype_array[1::2].map(encoding_dict)
         new_index = recoded_1.index.map(lambda x: x[:-3])
         recoded_1.index = new_index
         recoded_2.index = new_index
