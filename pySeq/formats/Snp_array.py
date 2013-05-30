@@ -7,15 +7,30 @@ import pandas as pd
 import numpy as np
 
 class SNP_array(Genotype.Genotype):
-    def __init__(self, zipfile, encoding = None):
+    def __init__(self, zipfile, fileformat = 'two column', delim = ',', encoding = None):
         
-        self.df = pd.read_csv(gzip.GzipFile(zipfile))
-        self.df.index = self.df.ix[:,'Snp.ID']
-        if encoding == None:
-            self.encoder = pd.Series(['A/G']*self.df.shape[0], index=self.df.index)
-        else:
-            self.encoder = encoding
-        self.geno = self.df.ix[:,4:].apply(_two_columns_per_individual_conversion ,encoder = self.encoder, axis=1)
+        try:
+            self.df = pd.read_csv(gzip.GzipFile(zipfile))
+        except:
+            self.df = pd.read_csv(zipfile, delimiter = delim)
+
+
+        if fileformat == 'two column':
+            self.df.index = self.df.ix[:,'Snp.ID']
+            if encoding == None:
+                self.encoder = pd.Series(['A/G']*self.df.shape[0], index=self.df.index)
+            else:
+                self.encoder = encoding
+            self.geno = self.df.ix[:,4:].apply(_two_columns_per_individual_conversion ,encoder = self.encoder, axis=1)
+
+        if fileformat == 'one column':
+            self.df.index = self.df.ix[:,0]
+            if encoding == None:
+                self.encoder = pd.Series(['A/G']*self.df.shape[0], index=self.df.index)
+            else:
+                self.encoder = encoding
+            self.geno = self.df.ix[:,3:].apply(_single_column_allele, encoder = self.encoder, axis = 1)
+
 
 def combine_afib_with_hapmap(afib, hapmap):
     """
@@ -69,23 +84,16 @@ def create_encoding_dict(allele1, allele2, no_ambig=True):
 
     return enc_dict
 
-def _single_column_allele(genotype_array, **kwargs):
+def _single_column_allele(genotype_array, encoder):
     """ Converts dataframes containing values the format described below into a integer dataframe. The first
     element in genotype_array should be the encoding.
 
     eg:  Ind01    Inde02
           AA       AG
     """
-    try:
-        allele1 = genotype_array[0][0]
-    except TypeError:
-        allele1 = genotype_array[1][0]
-    try:
-        allele2 = genotype_array[0][2]
-    except TypeError:
-        allele2 = genotype_array[1][2]
-    encoding_dict = create_encoding_dict(allele1, allele2)
-    new_array = genotype_array[1:].map(encoding_dict)
+    e = encoder[genotype_array.name]
+    encoding_dict = {e[0]+e[0] : 0, e[-1]+e[0] : 1, e[0]+e[-1] : 1, e[-1]+e[-1] : 2}
+    new_array = genotype_array[:].map(encoding_dict)
 
     return new_array
 
