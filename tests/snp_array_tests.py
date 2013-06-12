@@ -21,6 +21,23 @@ class TestLoadingSingleColumnData(unittest.TestCase):
         pass
 
 
+class TestLoadingDoubleColumnData(unittest.TestCase):
+    """ Testing loading VCF files into pandas
+    """
+
+    def setUp(self):
+        self.filename = './data/two-column-test-data'
+        self.array = SNP_array(self.filename, fileformat = 'two column', delim = '\t')
+
+    def testSamples(self):
+        self.assertEqual(self.array.df.shape, (9,4))
+        self.assertEqual(self.array.df.ix[0,3],'AA')
+        self.assertEqual(self.array.geno.shape,(9,1))
+        self.assertEqual(self.array.geno.ix[2,0], 2.0)
+        self.assertEqual(self.array.geno.index[3], 'rs12124819')
+
+    def testInfo(self):
+        pass
 
 def main():
     unittest.main()

@@ -10,7 +10,7 @@ import Genotype
 import functools
 import numpy as np
 import pandas as pd
-import numba
+#import numba
 
 def parse_chr(entry):
     try:
