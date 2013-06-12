@@ -36,3 +36,28 @@ class Genotype:
             return True
         else:
             return False
+
+def chi2_association(control, case, excludeNan = True):
+    from scipy.stats import chi2_contingency
+    probabilities = {}
+    probs_in_order = []
+    for snp in case.index:
+        if excludeNan:
+            exp = [sum([1 if x == 0 else 0 for x in control.ix[snp,:]]),\
+                    sum([x if x == 1 or x == 2 else 0 for x in control.ix[snp,:]])]
+        else:
+            exp = [sum([1 if x == 0 or np.isnan(x) else 0 for x in control.ix[snp,:]]),\
+                    sum([x if x == 1 or x == 2 else 0 for x in control.ix[snp,:]])]
+        if excludeNan:
+            obs = [sum([1 if x == 0 else 0 for x in case.ix[snp,:]]),\
+                    sum([x if x == 1 or x == 2 else 0 for x in case.ix[snp,:]])]
+        else:
+            obs = [sum([1 if x == 0 or np.isnan(x) else 0 for x in case.ix[snp,:]]),\
+                    sum([x if x == 1 or x == 2 else 0 for x in case.ix[snp,:]])]
+        try:
+            p = chi2_contingency([exp, obs])[1]
+            probabilities[snp] = p
+            probs_in_order.append(p)
+        except:
+            pass
+    return (probabilities, probs_in_order)
