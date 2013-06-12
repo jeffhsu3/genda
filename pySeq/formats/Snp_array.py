@@ -7,12 +7,13 @@ import pandas as pd
 import numpy as np
 
 class SNP_array(Genotype.Genotype):
-    def __init__(self, zipfile, fileformat = 'two column', delim = ',', encoding = None):
+    def __init__(self, zipfile, fileformat = 'two column', delim = ',', encoding = None, header_lines = 0,
+            startatline = 0, readnrows = None):
         
         try:
             self.df = pd.read_csv(gzip.GzipFile(zipfile))
         except:
-            self.df = pd.read_csv(zipfile, delimiter = delim)
+            self.df = pd.read_csv(zipfile, delimiter = delim, header = header_lines, skiprows = startatline-1, nrows = readnrows)
 
 
         if fileformat == 'two column':

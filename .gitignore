@@ -11,5 +11,8 @@
 *.c
 *.o
 
+#OpenSNP data
+user*.txt
+
 /build
 /doc/build
