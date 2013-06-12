@@ -23,6 +23,8 @@ Contents:
    related_software
    export_data_to_r
    vcf
+   snp_array
+   tutorials
 
 
 
