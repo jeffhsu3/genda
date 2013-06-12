@@ -8,7 +8,7 @@ is a VCF/BED/GFF/GTF file, from an indexed BAMfile/s or pileup/s:
     heterzygous.
 
 Usage:
-    python getReads.py bedfile/vcf tab-delimited bamfile -o OUTPUT
+    python getReads.py bedfile/vcf tab-delimited sample_mapping -o OUTPUT
 
 Limtations: Doesn't accurately account paralogous gene expression, which can
 manifest itself in allelic imbalance.  One way would be to have an input file
@@ -47,8 +47,6 @@ class lociInformation():
         """
         self.region = region
         self.position = int(position)
-        # So allele_counts['sample'] = [0,14,0,15]
-        # BASE_INDEX converts index to base, ie C, in 14
         self.phredThreshold = phredThreshold
         self.counts = np.zeros(4, dtype=np.uint8)
 
@@ -206,6 +204,7 @@ def main():
                                      chrm=vcf.vcf['CHROM'], pos=vcf.vcf['POS'])
     vcf.vcf.ix[:, 9:].apply(counts_fixed, axis=0)
     counts_matrix.to_csv(options.filename)
+    pickle.p    
 
 if __name__ == '__main__':
     main()

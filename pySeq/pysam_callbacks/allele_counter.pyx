@@ -5,7 +5,7 @@ DTYPE = np.int
 
 from cpython cimport bool
 
-#cimport csamtools as csam
+#cimport pysam.csamtools as csam
 #from pysam.csamtools cimport AlignedRead
 #cimport csamtools
 
@@ -26,7 +26,7 @@ class AlleleCounter(object):
     t.counts = [A counts, C counts, G counts, T counts]
     """
     BASE_INDEX = {'A':0, 'a':0, 'C':1, 'c':1, 'G':2, 'g':2, 'T':3, 't':3}
-    def __init__(self, byte region, int position, int phredThreshold=0, bool isIndel = False):
+    def __init__(self, region, int position, int phredThreshold=0, bool isIndel = False):
         self.region = region
         self.position = int(position)
         self.phredThreshold = phredThreshold
