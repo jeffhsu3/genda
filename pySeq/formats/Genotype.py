@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-#from numba import autojit
 import functools
 
 class Genotype:
@@ -15,7 +14,6 @@ class Genotype:
         Z = linkage(X,'single')
         dendrogram(Z)
 
-    #@autojit
     def hardyweinberg(self, snp, excludeNan = True):
         from scipy.stats import chisquare
         if excludeNan:
@@ -67,3 +65,28 @@ def chi2_association(control, case, excludeNan = True):
         except:
             pass
     return (probabilities, probs_in_order)
+
+def Fst(subpopulations, method = 'WC', excludeNan = True):
+    Fsts = []
+    for snp in loci:
+        pbar = 0
+        total_size=0
+        sub_ps=[]
+        for pop in subpopulations:
+            if excludeNan:
+                n=sum([0 if np.isnan(x) else 1 for x in pop.ix[snp,:]])
+            else:
+                n=pop.ix[snp,:].size[1]
+            total_size+=n
+            allele_counts = sum([0 if np.isnan(x) else x for x in pop.ix[snp,:]])
+            pbar+=allele_counts
+            p = float(allele_counts)/(2*n)
+            sub_ps.append(p)
+        pbar /= float(total_size)
+        r = len(subpopulations)
+        s2 = 0
+        for p in sub_ps:
+            s2 += ((p - pbar)**2) / (r - 1)
+        Fsts.append(s2/(pbar * (1 - pbar)))
+    Fst = sum(Fsts)/len(Fsts)
+    return Fst
