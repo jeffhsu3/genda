@@ -22,8 +22,10 @@ Contents:
    intro
    related_software
    export_data_to_r
+   genotype
    vcf
    snp_array
+   ped
    tutorials
 
 
