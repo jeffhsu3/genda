@@ -66,27 +66,45 @@ def chi2_association(control, case, excludeNan = True):
             pass
     return (probabilities, probs_in_order)
 
-def Fst(subpopulations, method = 'WC', excludeNan = True):
+def Fst(subpopulations, loci, method = 'WC', excludeNan = True):
     Fsts = []
+    N = []
+    D = []
     for snp in loci:
         pbar = 0
         total_size=0
         sub_ps=[]
+        h = []
+        ns=[]
         for pop in subpopulations:
             if excludeNan:
                 n=sum([0 if np.isnan(x) else 1 for x in pop.ix[snp,:]])
             else:
                 n=pop.ix[snp,:].size[1]
+            ns.append(n)
             total_size+=n
             allele_counts = sum([0 if np.isnan(x) else x for x in pop.ix[snp,:]])
             pbar+=allele_counts
             p = float(allele_counts)/(2*n)
             sub_ps.append(p)
+            if method in ['W', 'R']:
+                h.append(sum([1 if x==1 else 0 for x in pop.ix[snp,:]])/float(n))
         pbar /= float(total_size)
         r = len(subpopulations)
         s2 = 0
         for p in sub_ps:
             s2 += ((p - pbar)**2) / (r - 1)
-        Fsts.append(s2/(pbar * (1 - pbar)))
-    Fst = sum(Fsts)/len(Fsts)
+        if method == 'WC':
+            Fsts.append(s2/(pbar * (1 - pbar)))
+        if method == 'W':
+            N.append(s2-((1/(2*float(total_size)/r-1))*(pbar*(1-pbar)-s2*(r-1)/r-sum(h)/r)))
+            D.append(pbar*(1-pbar) + s2/r)
+        if method == 'R':
+            N.append((sub_ps[0] - sub_ps[1])**2 - (1-(sub_ps[0]**2 + (1-sub_ps[0])**2))/n[0] \
+                    - (1-(sub_ps[1]**2 + (1-sub_ps[1])**2))/n[1])
+            D.append(N[-1] + (1-(sub_ps[0]**2 + (1-sub_ps[0])**2)) + (1-(sub_ps[1]**2 + (1-sub_ps[1])**2)))
+    if method == 'WC':
+        Fst = sum(Fsts)/len(Fsts)
+    if method in ['W', 'R']:
+        Fst = sum(N)/sum(D)
     return Fst
