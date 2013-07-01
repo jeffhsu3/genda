@@ -37,7 +37,9 @@ Fst
         parameters:
             subpopulations - A list of genotype matricies (ex. VCF.geno, PED.geno, etc.) to be analyzed.
 
-            method - Which method of analysis to use. Options are 'WC' for the Weir & Cockerham method, 'W' for the Wright method, or 'R' for the Reich method. There is more information about each method `here <http://www.plosone.org/article/info:doi/10.1371/journal.pone.0042649>`_. At this point only 'WC' is supported.
+            loci - A list of snps to be included in the analysis.
+            
+            method - Which method of analysis to use. Options are 'WC' for the Weir & Cockerham method, 'W' for the Wright method, or 'R' for the Reich method (pairwise comparison). There is more information about each method `here <http://www.plosone.org/article/info:doi/10.1371/journal.pone.0042649>`_.
 
             excludeNan - When True, any calls of Nan will be excluded, when False, they will be treated as zeroes.
 
