@@ -2,6 +2,6 @@
 Introduction
 ********************
 
-pyAEI is an easy way to determine allelic imbalance from mRNA-sequencing reads, CHIP-seq and DNAseq data.   
+genda provides an easy way to load different formats of genetic data and analyze them.
 
 
