@@ -2,7 +2,7 @@
 Testing for overlap intervals
 """
 import unittest
-from pySeq.transcripts.exon_utils import calcOverlap, collideIntervals, \
+from genda.transcripts.exon_utils import calcOverlap, collideIntervals, \
         collapseIntervals
 
 class TestOverlapFunctions(unittest.TestCase):

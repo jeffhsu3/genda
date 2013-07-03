@@ -2,7 +2,7 @@
 import os, sys, glob
 import pysam
 
-name = 'pySeq'
+name = 'genda'
 version = '0.1'
 
 from distutils.core import setup
@@ -31,26 +31,26 @@ ext_modules = []
 if use_cython:
     print('using cython')
     ext_modules += [
-        Extension("pySeq.transcripts.exon_utils",
-                  ["pySeq/transcripts/exon_utils.pyx" ],),
-        Extension("pySeq.pysam_callbacks.allele_counter",
-            ["pySeq/pysam_callbacks/allele_counter.pyx"],
+        Extension("genda.transcripts.exon_utils",
+                  ["genda/transcripts/exon_utils.pyx" ],),
+        Extension("genda.pysam_callbacks.allele_counter",
+            ["genda/pysam_callbacks/allele_counter.pyx"],
             include_dirs=pysam.get_include(),
             define_macros=pysam.get_defines()),
-        Extension("pySeq.pysam_callbacks.gene_counter",
-            ["pySeq/pysam_callbacks/gene_counter.pyx"],
+        Extension("genda.pysam_callbacks.gene_counter",
+            ["genda/pysam_callbacks/gene_counter.pyx"],
             include_dirs=pysam.get_include()),
     ]
     print(ext_modules)
     cmdclass.update({'build_ext': build_ext})
 else:
     ext_modules += [
-        Extension("pySeq.transcripts.exon_utils",
-                  ["pySeq/transcripts/exon_utils.c"]),
-        Extension("pySeq.pysam_callbacks.allele_counter",
-            ["pySeq/pysam_callbacks.allele_counter.c"]),
-        Extension("pySeq.pysam_callbacks.gene_counter",
-            ["pySeq/pysam_callbacks.allele_counter.c"]),
+        Extension("genda.transcripts.exon_utils",
+                  ["genda/transcripts/exon_utils.c"]),
+        Extension("genda.pysam_callbacks.allele_counter",
+            ["genda/pysam_callbacks.allele_counter.c"]),
+        Extension("genda.pysam_callbacks.gene_counter",
+            ["genda/pysam_callbacks.allele_counter.c"]),
     ]
 
 
@@ -59,19 +59,19 @@ metadata = {'name':name,
             'cmdclass': cmdclass,
             'ext_modules': ext_modules,
             'scripts': glob.glob('scripts/*.py'),
-            'description':'pySeq',
+            'description':'genda',
             'author':'Jeffrey Hsu',
-            'packages':['pySeq', 'pySeq.stats',
-                        'pySeq.parsing','pySeq.formats',
-                        'pySeq.pysam_callbacks',
-                       'pySeq.transcripts', 'pySeq.AEI'],
+            'packages':['genda', 'genda.stats',
+                        'genda.parsing','genda.formats',
+                        'genda.pysam_callbacks',
+                       'genda.transcripts', 'genda.AEI'],
 }
 
 
 if __name__ == '__main__':
     dist = setup(**metadata)
     """
-        Extension("pySeq.pysam_callbacks.gene_counter",
-            ["pySeq/pysam_callbacks/gene_counter.pyx"],
+        Extension("genda.pysam_callbacks.gene_counter",
+            ["genda/pysam_callbacks/gene_counter.pyx"],
             include_dirs=pysam.get_include()),
     """

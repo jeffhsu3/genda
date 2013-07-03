@@ -1,4 +1,4 @@
-from pyseq.transcripts import Exon, Gene, Transcript, unique_sets
+from genda.transcripts import Exon, Gene, Transcript, unique_sets
 import unittest
 
 class TestGeneBreaks(unittest.TestCase):
