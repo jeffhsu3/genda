@@ -85,12 +85,13 @@ def unique_sets(set_list):
         # uniqufy the intersections
         u_s = set(intersection)
         for t in u_s:
-                
+            pass
 
-        set_list = [i
+
+        set_list = [i]
     while len(rs) > 0:
         intersection = [t & i for i in set_list]
-        out_sets.append(
+        out_sets.append(i)
 
     return(out_sets)
 

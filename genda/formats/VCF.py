@@ -1,7 +1,8 @@
 """Written by Jeff Hsu 2010
 """
-
 import collections, os
+
+
 class VCFfile(object):
     """ A flexible container for VCF files.  
     http://www.1000genomes.org/wiki/doku.php?id=1000_genomes:analysis:vcf4.0

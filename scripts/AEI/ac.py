@@ -19,8 +19,11 @@ import optparse, pickle
 import pysam
 import numpy as np
 
-def cigarParser(cigarList):
-    pass
+def file_len(file_handle):
+    with open(file_handle) as fh:
+        for i, _ in enumerate(fh):
+            pass
+    return(i + 1)
 
 class AlleleCounter():
     """ Gets the allele counts
@@ -111,10 +114,11 @@ def main():
     INDEX_BASE = ['A', 'C', 'G', 'T']
     counts_matrix = []
     c_m = []
-    c_major = []
-    c_minor = []
     rsID = []
     t = 0
+    n_lines = file_line(file_a)
+    file_a.seek(0)
+    np.zeros()
     for line in file_a:
         counts = []
         c = []

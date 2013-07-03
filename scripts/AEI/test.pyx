@@ -4,9 +4,14 @@
 is a VCF/BED/GFF/GTF file, from an indexed BAMfile/s or pileup/s and loads into a python pickle file:
 
 Usage:
-    python allele_counter.py bedfile/vcffile bamfile1 [bamfile2 ...] -o OUTPUT
+    python getReads.py bedfile/vcffile bamfile1 [bamfile2 ...] -o OUTPUT
 
 :TODO Need to handle indels
+:TODO add an option that includes a gene annotation file
+:TODO add support for pileup files
+:TODO also how does PCR duplicates affect?
+:TODO makes this more modular and testable, especially test for changes due to pysam API changes
+
 :TODO Output the results into a VCF file
 
 
@@ -19,8 +24,11 @@ import optparse, pickle
 import pysam
 import numpy as np
 
-def cigarParser(cigarList):
-    pass
+cimport numpy as np
+cimport csamtools as csam
+
+DTYPE = np.int
+ctypedef np.int_t DTYPE_t
 
 class AlleleCounter():
     """ Gets the allele counts
@@ -41,7 +49,7 @@ class AlleleCounter():
             qualT = self.phredThreshold
         else: pass
         #if alignment.is_duplicate or alignment.mapq <= 50:
-        if alignment.mapq <= 0 or alignment.is_duplicate:
+        if alignment.mapq <= 0:
             pass
         else:
             # This needs testing
@@ -92,7 +100,6 @@ def main():
     # For testing purposes
     debug = 1
     output = open(options.filename, 'wb')
-
     file_a = open(args[0],"rb")
 
     if not options.input:
@@ -111,8 +118,6 @@ def main():
     INDEX_BASE = ['A', 'C', 'G', 'T']
     counts_matrix = []
     c_m = []
-    c_major = []
-    c_minor = []
     rsID = []
     t = 0
     for line in file_a:
@@ -130,8 +135,6 @@ def main():
             else:
                 rsID.append(line[2])
                 isIndel = False
-            major = line[3]
-            minor = line[4]
         else:
             region = str(line[0])
             position = int(line[2]) # End position
@@ -148,16 +151,13 @@ def main():
         cC = np.zeros(len(bam_files), dtype=np.uint32)
         cG = np.zeros(len(bam_files), dtype=np.uint32)
         cT = np.zeros(len(bam_files), dtype=np.uint32)
-        c_major = np.zeros(len(bam_files), dtype=np.unit32)
-        c_minor = np.zeros(len(bam_files), dtype=np.unit32)
-
 
         if not isIndel:
             for i, bamfile in enumerate(bam_files):
                 p_v = AlleleCounter(region, position,
                         phredThreshold=options.qual)
                 # -1 to convert 0-based which pysam uses
-                bamfile.fetch(p_v.region, p_v.position-1, p_v.position,
+                bamfile.fetch(p_v.region, p_v.position-1, p_v.position-1,
                         callback=p_v)
 
                 # c.append(p_v.counts)
@@ -165,8 +165,6 @@ def main():
                 cC[i] = p_v.counts[1]
                 cG[i] = p_v.counts[2]
                 cT[i] = p_v.counts[3]
-                c_major[i] = p_v.counts[INDEX_BASE.index(major)]
-                c_minor[i] = p_v.counts[INDEX_BASE.index(minor)]
 
             c_m.append(cA)
             c_m.append(cC)
@@ -179,9 +177,7 @@ def main():
 
         # For testing purposes
         if options.D:
-            print(region, position, isIndel)
-            if debug > 90: break
-
+            if debug > 10: break
             else: debug += 1
         else:pass
     #print(c_m) 

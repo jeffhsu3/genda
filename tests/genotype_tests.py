@@ -1,7 +1,7 @@
 import unittest, os
 import pandas as pd
 
-from pySeq.formats import Genotype
+from genda.formats import Genotype
 
 class TestGenotype(unittest.TestCase):
     """ Testing loading VCF files into pandas

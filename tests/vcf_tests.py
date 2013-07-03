@@ -1,6 +1,6 @@
 import unittest, os
 
-from pySeq.formats.panVCF import VCF
+from genda.formats.panVCF import VCF
 
 class TestLoadingVCF(unittest.TestCase):
     """ Testing loading VCF files into pandas

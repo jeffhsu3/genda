@@ -1,6 +1,6 @@
 import unittest, os
 
-from pySeq.formats.Snp_array import SNP_array
+from genda.formats.Snp_array import SNP_array
 
 class TestLoadingSingleColumnData(unittest.TestCase):
     """ Testing loading VCF files into pandas

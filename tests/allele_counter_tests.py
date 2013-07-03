@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-from pySeq.pysam_callbacks.allele_counter import AlleleCounter
+from genda.pysam_callbacks.allele_counter import AlleleCounter
 
 class FakeAlignment(object):
     """ Simulating sequencing reads

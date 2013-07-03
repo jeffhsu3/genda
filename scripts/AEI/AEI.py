@@ -15,7 +15,6 @@ manifest itself in allelic imbalance.  One way would be to have an input file
 of all paralogous genes and calculated the probability of a read mismatching
 and then the liklihood that it is something not valulable.
 
-:TODO Add VCF support. Had it in originally
 :TODO Do comparison with reference allele
 :TODO Account for mis-alignments of the minor allele
 :TODO Need to be able to handle insertion/deletions in the sequence as compared

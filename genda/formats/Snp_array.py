@@ -6,6 +6,7 @@ import Genotype
 import pandas as pd
 import numpy as np
 
+
 class SNP_array(Genotype.Genotype):
     def __init__(self, zipfile, fileformat = 'two column', delim = ',', encoding = None, header_lines = 0,
             startatline = 0, readnrows = None):
@@ -50,6 +51,7 @@ def combine_afib_with_hapmap(afib, hapmap):
     out_geno = geno.ix[:,0:3].join([hapmap_geno, afib_geno], how='inner')
     return(out_geno)
 
+
 def flat_convert(afib):
     encoding = pd.Series(['A\\G'] * afib.shape[0], index=afib.index)
     afib['enc'] = encoding
@@ -85,6 +87,7 @@ def create_encoding_dict(allele1, allele2, no_ambig=True):
 
     return enc_dict
 
+
 def _single_column_allele(genotype_array, encoder):
     """ Converts dataframes containing values the format described below into a integer dataframe. The first
     element in genotype_array should be the encoding.
@@ -97,6 +100,7 @@ def _single_column_allele(genotype_array, encoder):
     new_array = genotype_array[:].map(encoding_dict)
 
     return new_array
+
 
 def _two_columns_per_individual_conversion(genotype_array, encoder):
     """ Convert a dataframe containing a column with two alleles

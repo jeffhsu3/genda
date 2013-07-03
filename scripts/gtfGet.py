@@ -10,17 +10,16 @@ def main():
     p = optparse.OptionParser(__doc__)
     p.add_option("-D", "--debug", action="store_true", dest="D", help="debug")
     p.add_option("-d", "--database", dest="d",\
-	    help="database")
+            help="database")
     p.add_option("-T", "--transcript", dest="t",\
-	    help="Transcript_id")
+            help="Transcript_id")
     p.add_option("-C", "--class", dest="C",\
-	    help="Look only at a particular Cufflinks class of transcript")
+            help="Look only at a particular Cufflinks class of transcript")
     options, args = p.parse_args()
     debug = 0
 
     IDs = open(args[0], "rU").read().rstrip("\n").split("\n")
     fh = csv.reader(open(args[1], "rU"), delimiter="\t")
-    
 
     ident = "transcript_id"
 
