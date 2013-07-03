@@ -7,6 +7,7 @@ Jeff Hsu
 import sys
 from itertools import cycle
 
+import Genotype
 import numpy as np
 import pandas as pd
 
@@ -36,7 +37,7 @@ def parse_geno(entry):
         return np.NaN
 
 
-class VCF(object):
+class VCF(Genotype.Genotype):
     """ A pandas dataframe wrapper for VCF files.
     """
 
