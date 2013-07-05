@@ -10,6 +10,7 @@
 *.out
 *.c
 *.o
+*.ipynb
 
 #OpenSNP data
 user*.txt

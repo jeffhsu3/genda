@@ -1,4 +1,3 @@
-
 import os, sys, glob
 import pysam
 
@@ -7,15 +6,6 @@ version = '0.1'
 
 from distutils.core import setup
 from distutils.extension import Extension
-
-def make_ext(modname, pyxfilename):
-    import pysam, os
-    dirname = os.path.dirname( pysam.__file__)[:-len("pysam")]
-    return Extension(name = modname, sources = [pyxfilename],
-                    extra_link_args = [os.pth.join(dirname, "csamtools.so")],
-                    include_dirs = ['../samtools',
-                                    '../pysam',
-                                    ])
 
 try:
     from Cython.Distutils import build_ext
@@ -37,9 +27,6 @@ if use_cython:
             ["genda/pysam_callbacks/allele_counter.pyx"],
             include_dirs=pysam.get_include(),
             define_macros=pysam.get_defines()),
-        Extension("genda.pysam_callbacks.gene_counter",
-            ["genda/pysam_callbacks/gene_counter.pyx"],
-            include_dirs=pysam.get_include()),
     ]
     print(ext_modules)
     cmdclass.update({'build_ext': build_ext})

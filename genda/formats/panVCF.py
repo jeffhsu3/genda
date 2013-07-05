@@ -6,10 +6,11 @@ Jeff Hsu
 
 import sys
 from itertools import cycle
-
+import Genotype
+import functools
 import numpy as np
 import pandas as pd
-
+#import numba
 
 def parse_chr(entry):
     try:
@@ -19,24 +20,27 @@ def parse_chr(entry):
         print("Chromosomes must be numeric")
 
 
-def parse_geno(entry):
+
+def parse_geno(entry,GT=0):
     """ Need to somehow keep phase, maybe use multi_index, but only
     works if haplotype is contigous across whole section.  Maybe
     groups to denote haplotype regions?
 
     """
-    g = entry.split(":")[0]
+    try:
+        g = entry.split(":")[GT]
+    except:
+        g = entry.split(":")[0]
     if g == "0/0" or g == "0|0" or g == '0':
         return 0
     elif g == "1/1" or g == "1|1" or g=='1':
         return 2
-    elif g == "0/1" or g == "0|1":
+    elif g == "0/1" or g == "0|1" or g == "1/0" or g == "1|0":
         return 1
     else:
         return np.NaN
 
-
-class VCF(object):
+class VCF(Genotype.Genotype):
     """ A pandas dataframe wrapper for VCF files.
     """
 
@@ -58,7 +62,7 @@ class VCF(object):
 
 
         convertor = {}
-        convertor = dict((k + 9 , parse_geno) for k in range(len(samples)))
+        #convertor = dict((k + 9 , parse_geno) for k in range(len(samples)))
         #convertor = dict((k + 9 , allele_ratio) for k in range(len(samples)))
         if chrom_converter:
             convertor[0] = chrom_converter
@@ -69,11 +73,14 @@ class VCF(object):
                                  chunksize = chunksize,
                                 )
 
-        self.vcf.rename(columns = {'#CHROM': 'CHROM'}, inplace=True)
- 
+        pg=functools.partial(parse_geno,GT = self.vcf.ix[0,8].split(":").index("GT"))
+        self.geno = self.vcf.ix[:,9:].applymap(pg)
+
+        #self.vcf.rename(columns = {'#CHROM': 'CHROM'}, inplace=True)
+
         rsID = self.vcf["ID"]
         novel = [str(i) + "_" + str(j) + "_" + str(k) for (i, j, k)\
-                 in zip(list(self.vcf["CHROM"][rsID=="."]),
+                 in zip(list(self.vcf["#CHROM"][rsID=="."]),
                         list(self.vcf["POS"][rsID == "."]),
                         list(self.vcf["ALT"][rsID == "."])
                        )
@@ -81,6 +88,7 @@ class VCF(object):
         self.novel = novel
         rsID[rsID == "."] = np.asarray(novel)
         self.vcf.index = pd.Index(rsID)
+        self.geno.index = self.vcf.index
         info_dict = self._split_info(self.vcf.INFO)
 
         # Parsing the INFO
@@ -106,16 +114,6 @@ class VCF(object):
         # Need a better way to do this
         for i in self.info:
             if i[2] == np.bool:
-                info_field = pd.Series(np.asarray(
-                    [flag_parse(k, i[0]) for k in info_dict],
-                                dtype = i[2]), index = self.vcf.index)
-                #self.vcf[i[0]] = info_field
-            elif i[1] > 1:
-                # :TODO This needs to be fixed
-                pass
-            elif i[2] == np.float64 or i[2] == np.int:
-                # :FIXME  float an integer
-                info_field = pd.Series(np.asarray(
                 info_field = pd.Series(np.asarray(
                     [flag_parse(k, i[0]) for k in info_dict],
                                 dtype = i[2]), index = self.vcf.index)
@@ -314,6 +312,16 @@ class VCF(object):
         nans = np.isnan(np.asarray(self.vcf.ix[rsID, 9:], dtype=np.float))
         return(self.vcf.columns[9:][np.logical_xor(non_ref, nans)])
 
+
+
+    def _skip_headers(self, fh):
+        """ Skips header of a vcf file.  Returns all the meta information to a
+        string, the sample identifiers, and the number of meta_lines.
+        """
+        meta = ''
+        in_header = True
+        line = fh.readline()
+        l_c = 0
         while in_header:
             if line[0:2] == "##":
                 meta += line
@@ -362,6 +370,207 @@ class VCF(object):
         self.vcf.ix
     """
 
+    def change_base(self, old_ref_file, new_ref_file, chrom):
+        from copy import deepcopy
+        from Bio import SeqIO
+        newvcf=deepcopy(self.vcf)
+        old = SeqIO.read(open(old_ref_file), format="fasta")
+        new = SeqIO.read(open(new_ref_file), format="fasta")
+        from Bio import pairwise2
+        pos={}
+        diff = {}
+        shifts={}
+        shift=0
+        old_margin = 0
+        new_margin = 0
+        changes=[]
+        dels=[]
+        final_shifts=[]
+        final_diffs=[]
+        alignments = pairwise2.align.globalms(str(old.seq), str(new.seq),1,-2,-5,-1)
+        old_seq=pairwise2.format_alignment(*alignments[0]).split('\n')[0]
+        new_seq=pairwise2.format_alignment(*alignments[0]).split('\n')[2]
+        for n in range(len(old_seq)):
+            if old_seq[n] != new_seq[n]:
+                if old_seq[n] == '-':
+                    old_margin -= 1
+                    shift += 1
+                    shifts[n+1+old_margin]=shift
+                    if old_seq[n+1]=='-':
+                        pass
+                    else:
+                        i=-1
+                        while old_seq[n+i] == '-':
+                            i-=1
+                        oldbases = old_seq[n+i]
+                        newbases = ''.join([new_seq[n+x] for x in range(i,1)])
+                        pos[n + old_margin] = n + 1 + new_margin
+                        diff[n + old_margin] = [oldbases.upper(), newbases.upper()]
+                elif new_seq[n] == '-':
+                    new_margin -= 1
+                    shift-=1
+                    shifts[n+1+old_margin]=shift
+                    dels.append(n+2+new_margin)
+                    try:
+                        if new_seq[n+1]=='-':
+                            pass
+                        else:
+                            i=-1
+                            while new_seq[n+i] == '-':
+                                i-=1
+                            newbases = new[n+i]
+                            oldbases = ''.join([old_seq[n+x] for x in range(i,1)])
+                            pos[n + old_margin] = n + 1 + new_margin
+                            diff[n + old_margin] = [oldbases.upper(), newbases.upper()]
+                    except:
+                        pass
+                else:
+                    pos[n + 1 + old_margin] = n + 1 + new_margin
+                    diff[n + 1 + old_margin] = [old_seq[n].upper(), new_seq[n].upper()]
+
+        #Outputs positions where indels affect the positioning between the two sequences
+        for key, value in sorted(shifts.items()):
+            final_shifts.append([key,value])
+
+        #Outputs old position, new position, old ref, new ref
+        for key, value in sorted(pos.items()):
+            final_diffs.append([key, value]+diff[key])
+
+        COORD_CHANGES={}
+
+        def change_coord(pos, coord_map = COORD_CHANGES):
+            change = 0
+            for key, value in sorted(coord_map.items()):
+                if key < pos:
+                    change = value
+                else: break
+            return change
+
+        def new_snp_pos(d,c):
+            l = sorted(list(d.keys()))
+            for i in l:
+                if i not in c:
+                    return i
+            return 'Done'
+
+        def convert_genotypes(samples, multiple_alleles = False):
+            """ Converts the genotypes of all samples in a given entry
+            and returns a list of vcfentry.
+
+            :TODO The multiple conversion isn't quite right
+            """
+            for n,p in enumerate(samples):
+                p = p.split(':')
+                freqs = p[1].split(',')[1] + ',' + p[1].split(',')[0]
+                if multiple_alleles:
+                    freqs = '0,' + freqs
+                if p[0] == '0/0':
+                    if multiple_alleles:
+                        temp = '2/2'
+                    else:
+                        temp = '1/1'
+                    samples[n] = temp + ':' + freqs + ':' + ':'.join(p[2:])
+                elif p[0] == '1/1' and not multiple_alleles:
+                    samples[n] = '0/0:' + freqs + ':' + ':'.join(p[2:])
+                elif p[0] in ['1/0', '0/1'] and multiple_alleles:
+                    samples[n] = '1/2:' + freqs + ':' + ':'. join(p[2:])
+                else: #1/0 or ./., neither of which need changing
+                    samples[n] = ':'.join(p)
+            return samples
+
+        for s in final_shifts:
+            COORD_CHANGES[s[0]] = s[1]
+        
+        d={}
+        for c in final_diffs:
+            d[c[0]] = [c[1], c[2], c[3]]
+
+        for row in range(self.vcf.shape[0]):
+            if newvcf.ix[row,0].endswith(chrom):
+                pos = self.vcf.ix[row,1]
+                newpos=pos + change_coord(pos)
+                if pos in d.keys():
+                    changes.append(pos)
+
+                    oldref = d[pos][1].upper()
+                    newref = d[pos][2].upper()
+                    ppl = []
+                    if newref == newvcf.ix[row,3].upper():
+                        alt = oldref
+                        newvcf.ix[row,7:] = convert_genotypes(newvcf.ix[row,7:])
+                    elif len(newvcf.ix[row,3].split(',')) == 1:
+                        alt = newvcf.ix[row,3] + ',' + oldref
+                        newvcf.ix[row,7:] = convert_genotypes(newvcf.ix[row,7:], multiple_alleles = True)
+                    elif newref in newvcf.ix[row,3].split(','):
+                        switch = newvcf.ix[row,3].split(',').index(newref)
+                        alt = ','.join([oldref if x==newref else x for x in line[4].split(',')])
+                        def switch_indexes(n, s):
+                            if n == s:
+                                return 0
+                            elif n == 0:
+                                return s
+                            return n
+                        for p in newvcf.ix[row,7:]:
+                            p = p.split(':')
+                            freqs = ','.join([p[1].split(',')[switch_indexes(n,switch+1)]\
+                                            for n,x in enumerate(p[1].split(','))])
+                            f = '/'.join([str(switch_indexes(x,switch+1)) for x in p[0].split('/')])
+                            ppl.append(f + ':' + freqs + ':' + ':'.join(p[2:]))
+                    else:
+                        alt = newvcf.ix[row,3] + ','+ oldref
+                        for p in newvcf.ix[row,7:]:
+                            p = p.split(':')
+                            freqs = '0,'+ p[1].split(',')[1] + ',' + p[1].split(',')[2] +','\
+                                    +p[1].split(',')[0]
+
+                            f = '/'.join([x if x != '0' else '3' for x in p[0].split('/')])
+                            ppl.append(f+':'+freqs+':'+':'.join(p[2:]))
+
+                    newvcf.ix[row,2]=newref
+                    newvcf.ix[row,3]=alt
+
+                newvcf.ix[row,1] = newpos
+
+        to_add={}
+        for m, snp in enumerate(sorted([x for x in d.keys() if x not in changes])):
+            for n in range(newvcf.shape[0]):
+                if newvcf.ix[n,1] > d[snp][0] and newvcf.ix[n,0].endswith(chrom):
+                    newrow = newvcf.ix[n,:]
+                    newrow.ix[1] = d[snp][0]
+                    newrow.ix[2] = d[snp][2]
+                    newrow.ix[3] = d[snp][1]
+                    newrow.ix[4] = '.'
+                    newrow.ix[5] = '.'
+                    newrow.ix[6] = 'GT'
+                    for i in range(7,len(newrow)):
+                        newrow.ix[i] = '1/1'
+                    to_add[n+m]=pd.DataFrame(newrow).transpose()
+                    break
+                elif n == newvcf.shape[0]-1:
+                    newrow = newvcf.ix[n,:]
+                    newrow.ix[1] = d[snp][0]
+                    newrow.ix[2] = d[snp][2]
+                    newrow.ix[3] = d[snp][1]
+                    newrow.ix[4] = '.'
+                    newrow.ix[5] = '.'
+                    newrow.ix[6] = 'GT'
+                    for i in range(7,len(newrow)):
+                        newrow.ix[i] = '1/1'
+                    to_add[n+m+1]=pd.DataFrame(newrow).transpose()
+                    break
+
+        for i in sorted(to_add.keys()):
+            newvcf = pd.concat([newvcf.ix[:i,:],to_add[i],newvcf.ix[i:,:]])
+
+        newvcf = newvcf[newvcf['POS'].map(lambda x: x not in dels)]
+
+        newobj = deepcopy(self)
+        newobj.vcf = newvcf
+        pg=functools.partial(parse_geno,GT = self.vcf.ix[0,6].split(":").index("GT"))
+        newobj.geno = newobj.vcf.ix[:,7:].applymap(parse_geno)
+
+        return newobj
+
 def pos_line_convert(line):
     """ Convert chr:pos into a integer
     """
@@ -397,8 +606,3 @@ def is_indel(line):
         return True
     else:
         return False
-
-
-
-
-
