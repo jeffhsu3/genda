@@ -4,13 +4,12 @@ a line from a VCF file
 Jeff Hsu
 """
 
-import sys
 from itertools import cycle
-import Genotype
 import functools
 import numpy as np
 import pandas as pd
-#import numba
+import Genotype
+
 
 def parse_chr(entry):
     try:
@@ -21,7 +20,7 @@ def parse_chr(entry):
 
 
 
-def parse_geno(entry,GT=0):
+def parse_geno(entry, GT=0):
     """ Need to somehow keep phase, maybe use multi_index, but only
     works if haplotype is contigous across whole section.  Maybe
     groups to denote haplotype regions?
@@ -39,6 +38,7 @@ def parse_geno(entry,GT=0):
         return 1
     else:
         return np.NaN
+
 
 class VCF(Genotype.Genotype):
     """ A pandas dataframe wrapper for VCF files.
@@ -258,6 +258,7 @@ class VCF(Genotype.Genotype):
                 self.gformat.append(line[line.find('<ID=')+4:line.find(',')])
                 #:TODO finish this
 
+
     def _parse_info(self, entry):
         """ Split the INFO field into a dictionary.  Creates an instance
         of the class varaible ans saves the dictionary to it.
@@ -272,6 +273,7 @@ class VCF(Genotype.Genotype):
         fields = entry.split(";")
         self.info_dict.append(dict(parse_field(k) for k in fields))
         return(int(self.info_dict['AC']))
+
 
     def _split_info(self, INFO):
         """ Split the INFO into a dictionary
@@ -289,6 +291,7 @@ class VCF(Genotype.Genotype):
         out_dict = [make_dict(i) for i in INFO]
         return(out_dict)
 
+
     def _parse_ids(self , entry):
         if not entry == ".":
             return(entry)
@@ -299,19 +302,19 @@ class VCF(Genotype.Genotype):
     def distance_based(self):
         pass
 
+
     def suspicious_loci(self):
         pass
 
 
-    def list_samples_with_alternate_allele(self, rsID):
-        """ Returns a list of samples that have the alternate non-ref allelex 
+    def list_samples_with_alternate_allele(self, rsID, show_na=False):
+        """ Returns a list of samples that have the alternate non-ref allele 
         at the variant identified by rsID
         """
 
-        non_ref = np.logical_not(self.vcf.ix[rsID, 9:] == 0)
-        nans = np.isnan(np.asarray(self.vcf.ix[rsID, 9:], dtype=np.float))
-        return(self.vcf.columns[9:][np.logical_xor(non_ref, nans)])
-
+        non_ref = np.logical_not(self.geno.ix[rsID, :] == 0)
+        nans = np.isnan(self.geno.ix[rsID, :])
+        return(self.geno.columns[np.logical_or(non_ref, nans)])
 
 
     def _skip_headers(self, fh):
@@ -566,8 +569,8 @@ class VCF(Genotype.Genotype):
 
         newobj = deepcopy(self)
         newobj.vcf = newvcf
-        pg=functools.partial(parse_geno,GT = self.vcf.ix[0,6].split(":").index("GT"))
-        newobj.geno = newobj.vcf.ix[:,7:].applymap(parse_geno)
+        #pg = functools.partial(parse_geno,GT = self.vcf.ix[0,6].split(":").index("GT"))
+        newobj.geno = newobj.vcf.ix[:,7:].applymap(parse_geno, GT=self.vcf.ix[0,6].split(":").index("GT"))
 
         return newobj
 
