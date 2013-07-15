@@ -8,7 +8,7 @@ Welcome to pySeq documentation!
 
 **Date**: |today| **Version**: |version|
 
-**Code Repository:** http://github.com/jeffhsu3/pyseq
+**Code Repository:** http://github.com/jeffhsu3/genda
 
 **genda** is `Python <http:www.python.org>`__ package for working with genetic and genomic data 
 using the python dataframe package pandas.
@@ -24,6 +24,7 @@ Contents:
    export_data_to_r
    vcf
    snp_array
+   ped
    tutorials
 
 

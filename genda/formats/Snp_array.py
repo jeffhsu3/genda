@@ -8,30 +8,47 @@ import numpy as np
 
 
 class SNP_array(Genotype.Genotype):
-    def __init__(self, zipfile, fileformat = 'two column', delim = ',', encoding = None, header_lines = 0,
+    def __init__(self, zipfile, fileformat = 'one column', delim = ',', encoding = None, header_lines = 0,
             startatline = 0, readnrows = None):
         
         try:
-            self.df = pd.read_csv(gzip.GzipFile(zipfile))
+            self.df = pd.read_csv(gzip.GzipFile(zipfile), delimiter = delim, header = header_lines,\
+                    skiprows = startatline-1, nrows = readnrows)
         except:
             self.df = pd.read_csv(zipfile, delimiter = delim, header = header_lines, skiprows = startatline-1, nrows = readnrows)
 
 
         if fileformat == 'two column':
-            self.df.index = self.df.ix[:,'Snp.ID']
+            try:
+                self.df.index = self.df.ix[:,'Snp.ID']
+            except:
+                self.df.index = self.df.ix[:,1]
+            self.encoder = encoding
             if encoding == None:
-                self.encoder = pd.Series(['A/G']*self.df.shape[0], index=self.df.index)
+                self.geno = None
             else:
-                self.encoder = encoding
-            self.geno = self.df.ix[:,4:].apply(_two_columns_per_individual_conversion ,encoder = self.encoder, axis=1)
+                self.geno = self.df.ix[:,4:].apply(_two_columns_per_individual_conversion, encoder = self.encoder, axis=1)
 
         if fileformat == 'one column':
             self.df.index = self.df.ix[:,0]
+            self.encoder = encoding
             if encoding == None:
-                self.encoder = pd.Series(['A/G']*self.df.shape[0], index=self.df.index)
+                self.geno = None
             else:
-                self.encoder = encoding
-            self.geno = self.df.ix[:,3:].apply(_single_column_allele, encoder = self.encoder, axis = 1)
+                self.geno = self.df.ix[:,3:].apply(_single_column_allele, encoder = self.encoder, axis = 1)
+
+        self.filetype = fileformat
+
+    def apply_encoder(self, encoder):
+        """
+        To apply the encoder to the SNP_array object after the fact if one was sot supplied with creation
+        """
+        if self.filetype == 'one column':
+            return self.df.ix[:,3:].apply(_single_column_allele, encoder = encoder, axis = 1)
+        elif self.filetype == 'two column':
+            return self.df.ix[:,4:].apply(_two_columns_per_individual_coversion, encoder = encoder, axis = 1)
+        else:
+            return None
 
 
 def combine_afib_with_hapmap(afib, hapmap):
@@ -108,8 +125,7 @@ def _two_columns_per_individual_conversion(genotype_array, encoder):
     eg:  Ind1.A1    Ind1.A2    Ind2.A1 ...
             A          G          A
     """
-    #genotype_array = pd.Series(['A/G'].extend(list(genotype_array)))
-    #encoding_dict = {genotype_array[0][0] : 0, genotype_array[0][2] : 1}
+    
     temp = encoder[genotype_array.name]
     encoding_dict = {temp[0] : 0, temp[2] : 1}
     try:
