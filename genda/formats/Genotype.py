@@ -35,11 +35,13 @@ class Genotype:
         else:
             return False
 
+
 def comparable(data1, data2):
     common_indexes = data1.index.join(data2.index, how = 'inner')
     data1 = data1.ix[common_indexes, :]
     data2 = data2.ix[common_indexes, :]
     return (data1, data2)
+
 
 def chi2_association(control, case, excludeNan = True):
     from scipy.stats import chi2_contingency
@@ -65,6 +67,7 @@ def chi2_association(control, case, excludeNan = True):
         except:
             pass
     return (probabilities, probs_in_order)
+
 
 def Fst(subpopulations, loci, method = 'WC', excludeNan = True):
     Fsts = []
