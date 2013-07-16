@@ -4,8 +4,8 @@ Genotype
 
 chi2_association
 ----------------
-    Uses the chi-squared statistic to determine the likelihood that each SNP determines a certain trait.
-    
+    Uses the chi-squared statistic to determine the likelihood that each SNP determines a certain trait. `Example <http://nbviewer.ipython.org/be0590cd0cb37cc58a96>`_.
+
     chi2_association(control, case, excludeNan = True)
         parameters:
             control - A pandas dataframe (SNP_array.geno for example) of samples that do not exhibit the desired trait.
@@ -19,11 +19,17 @@ chi2_association
 
             ordered_p_values - A list of all of the p-values in the order they were inputted. Useful for graphing.
 
+Hierarcical Clustering
+----------------------
+    Creates a dendrogram showing the hierarchical clustering of the data. `Example <http://nbviewer.ipython.org/90a548316eeae6bfb476>`_.
+
+    object.dendrogram()
+
 Hardy-Weinberg
 --------------
-    Determines if a given SNP is in Hardy-Weinberg equilibrium.
+    Determines if a given SNP is in Hardy-Weinberg equilibrium. `Example <http://nbviewer.ipython.org/90a548316eeae6bfb476>`_.
 
-    genotype_matrix.hardyweinberg(snp, excludeNan=True)
+    object.hardyweinberg(snp, excludeNan=True)
         parameters:
             snp - Name of the snp or locus to test.
 

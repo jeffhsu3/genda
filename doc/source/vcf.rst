@@ -9,21 +9,16 @@ panVCF.VCF(file)
     parameters:
         file - The VCF file which you want to load into panVCF
 
-VCF Data
---------
+Data
+----
     VCF.vcf
         Pandas dataframe of vcf data, excluding headers
 
-
-Head
-----
-    VCF.head()
-        Returns the headers for the vcf
-
-Genotypes
----------
     VCF.geno
         Pandas dataframe of genotype data
+
+    VCF.head()
+        Returns the headers for the vcf
 
 Hardy-Weinberg
 --------------
