@@ -13,7 +13,7 @@ The SNP Array class
             
             delim - What seperates the values in your data? Defaults to ',' but other common options are tabs ('\t') or spaces (' ').
             
-            encoding - A pandas series which contains the reference/alternate alleles (eg. 'A/G')  for each position with ids that correspond to the file.
+            encoding - A pandas series which contains the reference/alternate alleles (eg. 'A/G')  for each position with ids that correspond to the file. If no encoder is supplied, no genotype matrix will be created.
 
 Data
 ----
@@ -25,6 +25,15 @@ Data
 
     SNP_array.geno
         A pandas dataframe of the genotype data. 0 represents homozygous for the reference allele, 1 is heterozygous, and 2 is homozygous for the alternate allele.
+
+    SNP_array.apply_encoder(encoder)
+        If an encoder was not supplied upon creating the object, this is how you could still get a genotype matrix after the fact.    
+
+        parameters:
+            encoder - A pandas series which contains the reference/alternate alleles (eg. 'A/G')  for each position with ids that correspond to the file.
+
+        output:
+            A pandas dataframe of genotype data. 0 represents homozygous for the reference allele, 1 is heterozygous, and 2 is homozygous f    or the alternate allele.
 
 Hardy-Weinberg
 --------------

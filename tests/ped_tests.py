@@ -17,8 +17,8 @@ class TestLoadingSingleColumnData(unittest.TestCase):
     def testSamples(self):
         self.assertEqual(self.PED.geno.shape, (5,4))
         self.assertEqual(self.PED.geno.ix[0,0],0)
-        self.assertEqual(self.PED.geno.ix[3,0], np.nan)
-        self.assertEqual(self.PED.geno.hardyweinberg('snp1'), True)
+        self.assertEqual(np.isnan(self.PED.geno.ix[0,3]), True)
+        self.assertEqual(self.PED.hardyweinberg('snp1'), True)
 
     def testInfo(self):
         pass
