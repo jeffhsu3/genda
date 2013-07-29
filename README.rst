@@ -9,7 +9,7 @@ Instalation
 
 Documentation
 =============
-Documentation, along with tutorials, can be found `here <pyseq.rtfd.org>`_.
+Documentation, along with tutorials, can be found `here <http://pyseq.rtfd.org>`_.
 
 External Library Requirments:
 =============================
