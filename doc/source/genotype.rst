@@ -39,15 +39,17 @@ Hardy-Weinberg
 
 Fst
 ---
-    Fst(subpopulations, method = 'WC', excludeNan = True)
+    Fst(subpopulations, loci, method = 'W', excludeNan = True, disable_warning = False)
         parameters:
             subpopulations - A list of genotype matricies (ex. VCF.geno, PED.geno, etc.) to be analyzed.
 
             loci - A list of snps to be included in the analysis.
             
-            method - Which method of analysis to use. Options are 'WC' for the Weir & Cockerham method, 'W' for the Wright method, or 'R' for the Reich method (pairwise comparison). There is more information about each method `here <http://www.plosone.org/article/info:doi/10.1371/journal.pone.0042649>`_.
+            method - Which method of analysis to use. Options are 'WC' for the Weir & Cockerham method, 'W' for the Wright method, or 'R' for the Reich method (pairwise comparison). The default method is the Wright method because while testing it gave us by far the most accurate answers. For now, if you attempt to use the other two methods, a warning message will be printed to remind you of the possibility of an incorrect implimentation. There is more information about each method `here <http://www.plosone.org/article/info:doi/10.1371/journal.pone.0042649>`_.
 
             excludeNan - When True, any calls of Nan will be excluded, when False, they will be treated as zeroes.
 
+
+            disable_warning - Defaults to False. Set to True to make the warning that is printed when using the WC or R methods disappear.
         Output:
             Float - The Fst statistic.
