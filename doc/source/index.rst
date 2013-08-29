@@ -25,6 +25,7 @@ Contents:
    vcf
    snp_array
    ped
+   genotype
    tutorials
 
 

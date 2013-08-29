@@ -8,7 +8,7 @@ import numpy as np
 
 
 class SNP_array(Genotype.Genotype):
-    def __init__(self, zipfile, fileformat = 'one column', delim = ',', encoding = None, header_lines = 0,
+    def __init__(self, zipfile, fileformat = 'one column', delim = ',', samp_col = None, encoding = None, header_lines = 0,
             startatline = 0, readnrows = None):
         
         try:
@@ -19,23 +19,33 @@ class SNP_array(Genotype.Genotype):
 
 
         if fileformat == 'two column':
+            if samp_col == None:
+                samp_col = 4
+            self.samp_col = samp_col
             try:
                 self.df.index = self.df.ix[:,'Snp.ID']
             except:
                 self.df.index = self.df.ix[:,1]
+            if isinstance(encoding, (int, long)):
+                encoding = self.df.ix[:,encoding]
             self.encoder = encoding
-            if encoding == None:
+            if type(self.encoder) == type(None):
                 self.geno = None
             else:
-                self.geno = self.df.ix[:,4:].apply(_two_columns_per_individual_conversion, encoder = self.encoder, axis=1)
+                self.geno = self.df.ix[:,self.samp_col:].apply(_two_columns_per_individual_conversion, encoder = self.encoder, axis=1)
 
         if fileformat == 'one column':
+            if samp_col == None:
+                samp_col = 3
+            self.samp_col = samp_col
             self.df.index = self.df.ix[:,0]
+            if isinstance(encoding, (int, long)):
+                encoding = self.df.ix[:,encoding]
             self.encoder = encoding
-            if encoding == None:
+            if type(self.encoder) == type(None):
                 self.geno = None
             else:
-                self.geno = self.df.ix[:,3:].apply(_single_column_allele, encoder = self.encoder, axis = 1)
+                self.geno = self.df.ix[:,self.samp_col:].apply(_single_column_allele, encoder = self.encoder, axis = 1)
 
         self.filetype = fileformat
 
@@ -44,9 +54,9 @@ class SNP_array(Genotype.Genotype):
         To apply the encoder to the SNP_array object after the fact if one was sot supplied with creation
         """
         if self.filetype == 'one column':
-            return self.df.ix[:,3:].apply(_single_column_allele, encoder = encoder, axis = 1)
+            return self.df.ix[:,self.samp_col:].apply(_single_column_allele, encoder = encoder, axis = 1)
         elif self.filetype == 'two column':
-            return self.df.ix[:,4:].apply(_two_columns_per_individual_coversion, encoder = encoder, axis = 1)
+            return self.df.ix[:,self.samp_col:].apply(_two_columns_per_individual_coversion, encoder = encoder, axis = 1)
         else:
             return None
 
