@@ -8,17 +8,46 @@ import numpy as np
 
 
 class SNP_array(Genotype.Genotype):
-    def __init__(self, zipfile, fileformat = 'one column', delim = ',', samp_col = None, encoding = None, header_lines = 0,
+    __doc__ = """
+    Class that specifically deals with genotyping from microarrays.
+
+    %(param)s
+    zipfile : location of output
+
+    %(extra_param)s
+    fileformat : {'one column', 'two column', 'illumina'} 
+    delim : Data delimiter
+    sample_col : The columns in which 
+    encoding : Encoding data for the SNPs.
+    header_lines : Number of lines to be read in as the header.
+    startatline : The line to start reading data at.
+
+    Attributes
+    ----------
+    df : original dataframe loaded
+    geno : converted genotype matrix
+    file_format : file format
+    apply_encoder :  
+
+
+    Related
+    -------
+    Genotype.Genotype
+
+    
+    """
+    def __init__(self, zipfile, file_format = 'one column', delim = ',', samp_col = None, encoding = None, header_lines = 0,
             startatline = 0, readnrows = None):
         
         try:
             self.df = pd.read_csv(gzip.GzipFile(zipfile), delimiter = delim, header = header_lines,\
                     skiprows = startatline-1, nrows = readnrows)
         except:
+            # :TODO change exception
             self.df = pd.read_csv(zipfile, delimiter = delim, header = header_lines, skiprows = startatline-1, nrows = readnrows)
 
 
-        if fileformat == 'two column':
+        if file_format == 'two_column':
             if samp_col == None:
                 samp_col = 4
             self.samp_col = samp_col
@@ -32,9 +61,11 @@ class SNP_array(Genotype.Genotype):
             if type(self.encoder) == type(None):
                 self.geno = None
             else:
-                self.geno = self.df.ix[:,self.samp_col:].apply(_two_columns_per_individual_conversion, encoder = self.encoder, axis=1)
+                self.geno = self.df.ix[:,self.samp_col:].apply(
+                        _two_columns_per_individual_conversion, 
+                        encoder = self.encoder, axis=1)
 
-        if fileformat == 'one column':
+        elif file_format == 'one column':
             if samp_col == None:
                 samp_col = 3
             self.samp_col = samp_col
@@ -45,9 +76,19 @@ class SNP_array(Genotype.Genotype):
             if type(self.encoder) == type(None):
                 self.geno = None
             else:
-                self.geno = self.df.ix[:,self.samp_col:].apply(_single_column_allele, encoder = self.encoder, axis = 1)
+                self.geno = self.df.ix[:,self.samp_col:].apply(
+                        _single_column_allele, 
+                        encoder = self.encoder, axis = 1)
 
-        self.filetype = fileformat
+        elif file_format == 'illumina':
+            pass
+
+        else:
+            raise NotImplementedError("Only 'one_column', 'two_column' and\
+                    'illumina' formats are currently supported")
+
+        self.filetype = file_format
+
 
     def apply_encoder(self, encoder):
         """
@@ -132,11 +173,19 @@ def _single_column_allele(genotype_array, encoder):
 def _two_columns_per_individual_conversion(genotype_array, encoder):
     """ Convert a dataframe containing a column with two alleles
 
+    Parameters
+    ----------
+    genotype_array : 
+    encoder : 
+
     eg:  Ind1.A1    Ind1.A2    Ind2.A1 ...
             A          G          A
     """
-    
-    temp = encoder[genotype_array.name]
+
+    try:
+        temp = encoder[genotype_array.name]
+    except AttributeError:
+        temp = encoder
     encoding_dict = {temp[0] : 0, temp[2] : 1}
     try:
         recoded_1 = genotype_array[0::2].map(encoding_dict)
@@ -165,7 +214,7 @@ def convert_hapmap(input_dataframe, recode=False, index_col=0):
     return new_dataframe
 
 
-def convert_illumina(dataframe, index_col = 0):
+def convert_illumina(dataframe, encoding):
     """ Since the Illumina platform contains no ambigous snps ('A/T' or 'G/C') only
     'G/T' and 'G/C' need to be converted.
 
@@ -173,13 +222,12 @@ def convert_illumina(dataframe, index_col = 0):
 
     This is about thirty times faster than the non-vectorized solution.
     """
-    print(dataframe.shape)
     complement = {'G/T': 'C/A', 'C/T': 'G/A', "G/A" : "G/A", "C/A": "C/A", "A/G" : "A/G",
             "A/C": "A/C"}
-    recode = dataframe.ix[:, index_col].apply(lambda x: complement[x])
+    recode = encoding.apply(lambda x: complement[x])
     dataframe.ix[:,0] = recode
-    new_dataframe = dataframe.apply(_two_columns_per_individual_conversion, axis = 1)
-    print(new_dataframe.shape)
+    new_dataframe = dataframe.apply(_two_columns_per_individual_conversion,
+            args=(encoding,), axis = 1)
 
     return new_dataframe
 
