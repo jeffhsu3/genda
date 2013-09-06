@@ -186,6 +186,8 @@ def _two_columns_per_individual_conversion(genotype_array, encoder):
         temp = encoder[genotype_array.name]
     except AttributeError:
         temp = encoder
+    except TypeError:
+        temp = encoder
     encoding_dict = {temp[0] : 0, temp[2] : 1}
     try:
         recoded_1 = genotype_array[0::2].map(encoding_dict)
@@ -196,6 +198,7 @@ def _two_columns_per_individual_conversion(genotype_array, encoder):
         recoded_array = recoded_1 + recoded_2
     except IndexError:
         print('Welp')
+
 
     return recoded_array
 
