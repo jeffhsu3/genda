@@ -33,8 +33,6 @@ class SNP_array(Genotype.Genotype):
     Related
     -------
     Genotype.Genotype
-
-    
     """
     def __init__(self, zipfile, file_format = 'one column', delim = ',', samp_col = None, encoding = None, header_lines = 0,
             startatline = 0, readnrows = None):
@@ -102,17 +100,14 @@ class SNP_array(Genotype.Genotype):
             return None
 
 
-def combine_afib_with_hapmap(afib, hapmap):
+def combine_afib_with_hapmap(geno , hapmap):
+    """ Convenience function for combining
     """
-    """
-    geno = hapmap.join(afib, how='inner')
-    print(geno.shape)
+    geno = hapmap.join(geno, how='inner')
     afib_index = [0]
-    afib_index.extend(range(187, afib.shape[1]))
-    afib_new = geno.ix[:, afib_index].copy()
+    afib_index.extend(range(187, geno.shape[1]))
+    geno = geno.ix[:, afib_index].copy()
     afib_geno = convert_illumina(geno.ix[:, afib_index])
-    print(len(afib_index))
-    print(afib_geno.shape)
     hapmap_index = [0]
     hapmap_index.extend(range(11,185))
     hapmap_geno = convert_hapmap(geno.ix[:,hapmap_index], recode = False)
