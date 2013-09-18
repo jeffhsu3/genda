@@ -16,6 +16,7 @@ class Genotype(object):
         self.df = data
         self.ix = self.df.ix
 
+
     def dendrogram(self):
         """ Plots dendrogram
         """
@@ -24,6 +25,7 @@ class Genotype(object):
         X = g.as_matrix()
         Z = linkage(X,'single')
         dendrogram(Z)
+
 
     def hardyweinberg(self, snp, excludeNan = True):
         """ Calculate hardyweinberg
@@ -36,6 +38,7 @@ class Genotype(object):
         Returns
         -------
         boolean
+
         """
         from scipy.stats import chisquare
         if excludeNan:
