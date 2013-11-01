@@ -51,7 +51,7 @@ class SNP_array(Genotype.Genotype):
             self.samp_col = samp_col
             try:
                 self.df.index = self.df.ix[:,'Snp.ID']
-            except:
+            except KeyError:
                 self.df.index = self.df.ix[:,1]
             if isinstance(encoding, (int, long)):
                 encoding = self.df.ix[:,encoding]
