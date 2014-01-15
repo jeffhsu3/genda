@@ -8,7 +8,7 @@ is a VCF/BED/GFF/GTF file, from an indexed BAMfile/s or pileup/s:
     heterzygous.
 
 Usage:
-    python getReads.py bedfile/vcf tab-delimited sample_mapping -o OUTPUT
+    python AEI_2.py bedfile/vcf tab-delimited sample_mapping -o OUTPUT
 
 Limtations: Doesn't accurately account paralogous gene expression, which can
 manifest itself in allelic imbalance.  One way would be to have an input file
@@ -25,13 +25,14 @@ import cProfile
 import functools
 from collections import defaultdict
 
+import requests
 import pysam
 import numpy as np
 import pandas as pd
 
-from pySeq.formats.panVCF import VCF
-import pySeq.stats.likelihood_funcs as lf
-from pySeq.pysam_callbacks.allele_counter import AlleleCounter
+from genda.formats.panVCF import VCF
+import genda.stats.likelihood_funcs as lf
+from genda.pysam_callbacks.allele_counter import AlleleCounter
 
 
 class lociInformation():
@@ -94,7 +95,7 @@ def column_names_to_bams(colname):
 
 def counts_for_individuals(sample_genotype, c_m=None, chrm=None, pos=None, path=None,
                            bamfile_func = column_names_to_bams):
-    """
+    """ Given a genotype, only run AEI on the known heterozygotes
     """
     # Restrict to heterozygotes
     reduced_chrm = chrm[sample_genotype == 1]
@@ -104,7 +105,6 @@ def counts_for_individuals(sample_genotype, c_m=None, chrm=None, pos=None, path=
     for i, j, k in zip(reduced_chrm, reduced_pos, reduced_index):
         """ Vectorize this?
         """
-        print(i, j)
         variant = lociInformation(str(i), j,
                                   phredThreshold=0)
         bamfile.pileup(variant.region, variant.position,
@@ -116,6 +116,10 @@ def counts_for_individuals(sample_genotype, c_m=None, chrm=None, pos=None, path=
                         variant.position+1, callback=variant_2)
         print(variant.counts, variant_2.counts)
         """
+        print(variant.counts.T)
+        print(k)
+        print(sample_genotype.name)
+        print(c_m.columns[0:4])
         c_m.ix[k, [(sample_genotype.name, 0), (sample_genotype.name, 1), (sample_genotype.name, 2), (sample_genotype.name, 3),]] = variant.counts.T
 
 
@@ -141,12 +145,15 @@ def main():
     p = optparse.OptionParser(__doc__)
     p.add_option("-o", "--output", dest="filename", help="write \
             report to FILE")
+    p.add_option("-a", "--annot", dest="annot", help="Annotation file\
+            for SNPs")
     p.add_option("-G", "--genotype", dest="G", help=\
             "Use imputed/genotypes if available, should be in VCF file format")
     p.add_option("-v",  "--vcf_file", action="store_true", dest="inputisvcfile",
                  help="the input is a VCF file")
     p.add_option("-q", "--quality_threshold", type="int", dest="qual",
                  help="base quality threshold to take allele counts from")
+    p.add_option("-P", "--variant_positions", action="store", help="")
     p.add_option("-p", "--pileup", action="store_true", dest="p",
                  help= "Input files are pileup files")
     p.add_option("-D", "--debug", action="store_true", dest="D", help="debug")
@@ -162,22 +169,47 @@ def main():
     if options.qual: pass
     else: options.qual = 20
 
-
     # For testing purposes
     debug = 1
     output = open(options.filename, 'wb')
 
-    vcf = VCF(args[0])
+    if options.v:
+        vcf = VCF(args[0])
+        chrm = vcf.vcf['#CHROM']
+        pos = vcf.vcf['POS']
+    elif options.G:
+        pass
+        #file_a = open(options.G,  'rU') 
+    else:
+        vcf = pd.read_csv(args[0], sep=" ")
+        # Read in annotation file
+        try:
+            vcf_annot = pd.read_csv(options.annot)
+        except (IOError, AttributeError):
+            ensembl_server = "http://beta.rest.ensembl.org"
+            ensembl_extension = "/vep/human/id/%s/consequences?"
+            chrm = []
+            pos = []
+            for i in vcf.ix[: ,0]:
+                r = requests.get(ensembl_server + ensembl_extension % i)
+                if r.status_code == 200:
+                    r = r.json()
+                    try:
+                        chrm.append(r['data']['location']['name'])
+                        pos.append(r['data']['location']['start'])
+                    except IndexError:
+                        print(r)
+
+            chrm = np.array(chrm)
+            pos = np.array(pos)
+
 
     # A tab delimited file mapping sample names to bams ############# 
     bam_inputs = open(args[1], 'rU')
     sample_to_file = {}
     for line in bam_inputs:
         line = line.split("\t")
-        sample_to_file[line[0]] = line[1].rstrip("\n")
-
-
-    # Handling of multiple BAM/SAM inputs
+        sample_to_file[line[0]] = line[1].rstrip("\n").rstrip("/n")
 
 
     INDEX_BASE = ['A', 'C', 'G', 'T']
@@ -188,23 +220,28 @@ def main():
 
     multi_tuples = []
     # Temproary change the column names
-    vcf.vcf.rename(columns=sample_to_file, inplace=True)
-    for i in vcf.vcf.columns[9:]:
+    #vcf.vcf.rename(columns=sample_to_file, inplace=True)
+    subset_vcf = vcf.vcf.ix[:, sample_to_file.keys()].copy()
+    subset_vcf.rename(columns=sample_to_file, inplace=True)
+    subset_geno = vcf.geno.ix[:, sample_to_file.keys()].copy()
+    subset_geno.rename(columns=sample_to_file, inplace=True)
+    for i in subset_geno.columns:
         multi_tuples.append(i)
         multi_tuples.append(i)
         multi_tuples.append(i)
         multi_tuples.append(i)
-    multi = zip(multi_tuples, [0,1,2,3]*len(vcf.vcf.columns[9:]))
+    multi = zip(multi_tuples, [0,1,2,3]*len(subset_geno))
     multi_index = pd.MultiIndex.from_tuples(multi, names=['sample', 'alleles'])
-
-    counts_matrix = pd.DataFrame(np.zeros((vcf.vcf.shape[0], len(vcf.vcf.columns[9:])*4), dtype=np.int16),
-                                 index=vcf.vcf.index, columns=multi_index)
+    counts_matrix = pd.DataFrame(np.zeros((subset_geno.shape[0], 
+                                           len(subset_geno.columns)*4), 
+                                           dtype=np.int16),
+                                 index=subset_vcf.index, columns=multi_index)
 
     counts_fixed = functools.partial(counts_for_individuals, c_m=counts_matrix,
-                                     chrm=vcf.vcf['CHROM'], pos=vcf.vcf['POS'])
-    vcf.vcf.ix[:, 9:].apply(counts_fixed, axis=0)
-    counts_matrix.to_csv(options.filename)
-    pickle.p    
+                                     chrm=chrm, pos=pos)
+    subset_geno.apply(counts_fixed, axis=0)
+    #counts_matrix.to_csv(options.filename)
+    counts_matrix.save('options.filename')
 
 if __name__ == '__main__':
     main()

@@ -18,28 +18,30 @@ class FakeAlignment(object):
         self.mapq = 255
         self.qual = len(seq) * 'I'
 
+
 class testCounter(unittest.TestCase):
     def setUp(self):
-        self.seq = "ATTAGGATAGATGATGATGA"
+        # :TODO make this shorter
+        self.seq = "ATTAGGATAG"
 
     def testRegular(self):
-        regular_read = FakeAlignment(25, self.seq, [(0,20)])
-        # Position should be an A
-        test = AlleleCounter("chr1", 35)
+        regular_read = FakeAlignment(25, self.seq, [(0,10)])
+        # Position should be an G
+        test = AlleleCounter("chr1", 29)
         test(regular_read)
         np.testing.assert_equal(test.counts, np.asarray([0,0,1,0]))
 
     def testSNPinIntron(self):
-        snp_in_intron = FakeAlignment(25, self.seq, [(0,10), (3,100), (0,10)])
-        test = AlleleCounter("chr1", 35)
+        snp_in_intron = FakeAlignment(25, self.seq, [(0,5), (3,5), (0,5)])
+        test = AlleleCounter("chr1", 31)
         test(snp_in_intron)
         np.testing.assert_equal(test.counts, np.asarray([0,0,0,0]))
 
     def testSecondExon(self):
-        snp_in_second_exon = FakeAlignment(25, self.seq,[(0,10),(3,5),(0,10)])
-        test = AlleleCounter("chr1", 47)
+        snp_in_second_exon = FakeAlignment(25, self.seq,[(0,5),(3,5),(0,5)])
+        test = AlleleCounter("chr1", 37)
         test(snp_in_second_exon)
-        np.testing.assert_equal(test.counts, np.asarray([1,0,0,0]))
+        np.testing.assert_equal(test.counts, np.asarray([0,0,0,1]))
 
     """
     Not yet implemented
