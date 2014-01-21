@@ -3,8 +3,15 @@ import unittest
 import numpy as np
 
 from genda.pysam_callbacks.allele_counter import AlleleCounter
+from pysam.csamtools import AlignedRead
 
-class FakeAlignment(object):
+def make_read(aligned_read, pos, cigar):
+    aligned_read.pos = pos
+    aligned_read.cigar = cigar 
+    return aligned_read
+
+
+class FakeAlignment(AlignedRead):
     """ Simulating sequencing reads
     """
 
@@ -21,24 +28,28 @@ class FakeAlignment(object):
 
 class testCounter(unittest.TestCase):
     def setUp(self):
-        # :TODO make this shorter
-        self.seq = "ATTAGGATAG"
+        # Read positions in BAM are zero-indexed while SNP positions are almost
+        # always 1-indexed
+        self.read = AlignedRead()
+        self.read.seq = "ATTAGGATAG" 
+        self.mapq = 255
+        self.qual = len(self.read.seq) * 'I'
 
     def testRegular(self):
-        regular_read = FakeAlignment(25, self.seq, [(0,10)])
         # Position should be an G
+        regular_read = make_read(self.read, 24, [(0,10)])
         test = AlleleCounter("chr1", 29)
         test(regular_read)
         np.testing.assert_equal(test.counts, np.asarray([0,0,1,0]))
 
     def testSNPinIntron(self):
-        snp_in_intron = FakeAlignment(25, self.seq, [(0,5), (3,5), (0,5)])
+        snp_in_intron = make_read(self.read, 24, [(0,5), (3,5), (0,5)])
         test = AlleleCounter("chr1", 31)
         test(snp_in_intron)
         np.testing.assert_equal(test.counts, np.asarray([0,0,0,0]))
 
     def testSecondExon(self):
-        snp_in_second_exon = FakeAlignment(25, self.seq,[(0,5),(3,5),(0,5)])
+        snp_in_second_exon = make_read(self.read, 24, [(0,5),(3,5),(0,5)])
         test = AlleleCounter("chr1", 37)
         test(snp_in_second_exon)
         np.testing.assert_equal(test.counts, np.asarray([0,0,0,1]))

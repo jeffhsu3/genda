@@ -102,27 +102,32 @@ def counts_for_individuals(sample_genotype, c_m=None, chrm=None, pos=None, path=
     reduced_pos = pos[sample_genotype == 1]
     reduced_index = sample_genotype.index[sample_genotype == 1]
     bamfile = pysam.Samfile(sample_genotype.name, 'rb')
+    print(sample_genotype.name)
     for i, j, k in zip(reduced_chrm, reduced_pos, reduced_index):
         """ Vectorize this?
-        """
         variant = lociInformation(str(i), j,
                                   phredThreshold=0)
         bamfile.pileup(variant.region, variant.position,
                         variant.position+1, callback=variant)
         """
-        variant_2 = AlleleCounter('chr' + str(i), j,
+        variant = AlleleCounter(str(i), j,
                                    phredThreshold=0)
         bamfile.fetch(variant.region, variant.position,
-                        variant.position+1, callback=variant_2)
-        print(variant.counts, variant_2.counts)
-        """
-        print(variant.counts.T)
-        print(k)
-        print(sample_genotype.name)
-        print(c_m.columns[0:4])
+                        variant.position + 1, callback=variant)
+        #print(variant.counts + 1, variant_2.counts)
+        #print(variant.counts.T)
+        #print(k)
+        #print(c_m.columns[0:4])
+        print(variant.counts)
         c_m.ix[k, [(sample_genotype.name, 0), (sample_genotype.name, 1), (sample_genotype.name, 2), (sample_genotype.name, 3),]] = variant.counts.T
 
 
+def reget_sample_names(index, mapping):
+    """
+    """
+    print(index)
+    sample = mapping[index[0]]
+    return(sample, index[1])
 
 
 def inner_apply(x, chrom, position):
@@ -147,10 +152,11 @@ def main():
             report to FILE")
     p.add_option("-a", "--annot", dest="annot", help="Annotation file\
             for SNPs")
-    p.add_option("-G", "--genotype", dest="G", help=\
-            "Use imputed/genotypes if available, should be in VCF file format")
-    p.add_option("-v",  "--vcf_file", action="store_true", dest="inputisvcfile",
-                 help="the input is a VCF file")
+    p.add_option("-G", "--genotype", dest="G", action='store', help=\
+            "Use imputed/genotypes if available, should be in VCF file format", 
+            default=None)
+    p.add_option("-v",  "--vcf_file", action="store_true", dest="inputisvcffile",
+                 help="the input is a VCF file", default=False)
     p.add_option("-q", "--quality_threshold", type="int", dest="qual",
                  help="base quality threshold to take allele counts from")
     p.add_option("-P", "--variant_positions", action="store", help="")
@@ -172,11 +178,13 @@ def main():
     # For testing purposes
     debug = 1
     output = open(options.filename, 'wb')
+    print(options)
 
-    if options.v:
+    if options.inputisvcffile:
         vcf = VCF(args[0])
         chrm = vcf.vcf['#CHROM']
         pos = vcf.vcf['POS']
+        geno = vcf.geno
     elif options.G:
         pass
         #file_a = open(options.G,  'rU') 
@@ -188,20 +196,25 @@ def main():
         except (IOError, AttributeError):
             ensembl_server = "http://beta.rest.ensembl.org"
             ensembl_extension = "/vep/human/id/%s/consequences?"
+            headers = {'Content-Type' : 'application/json'}
             chrm = []
             pos = []
-            for i in vcf.ix[: ,0]:
-                r = requests.get(ensembl_server + ensembl_extension % i)
+            for i in vcf.index:
+                r = requests.get(ensembl_server + ensembl_extension % i,
+                        headers=headers)
                 if r.status_code == 200:
                     r = r.json()
                     try:
-                        chrm.append(r['data']['location']['name'])
-                        pos.append(r['data']['location']['start'])
+                        chrm.append(r['data'][0]['location']['name'])
+                        pos.append(r['data'][0]['location']['start'])
                     except IndexError:
                         print(r)
+                else: 
+                    print('whelp')
 
-            chrm = np.array(chrm)
+            chrm = np.array(['chr' + j for j in chrm])
             pos = np.array(pos)
+            geno = vcf
 
 
     # A tab delimited file mapping sample names to bams ############# 
@@ -210,6 +223,8 @@ def main():
     for line in bam_inputs:
         line = line.split("\t")
         sample_to_file[line[0]] = line[1].rstrip("\n").rstrip("/n")
+        file_to_sample = {v:k for k, v in sample_to_file.items()}
+    print(geno.ix[:, 0:5])
 
 
     INDEX_BASE = ['A', 'C', 'G', 'T']
@@ -221,27 +236,32 @@ def main():
     multi_tuples = []
     # Temproary change the column names
     #vcf.vcf.rename(columns=sample_to_file, inplace=True)
-    subset_vcf = vcf.vcf.ix[:, sample_to_file.keys()].copy()
-    subset_vcf.rename(columns=sample_to_file, inplace=True)
-    subset_geno = vcf.geno.ix[:, sample_to_file.keys()].copy()
+    #subset_vcf = vcf.vcf.ix[:, sample_to_file.keys()].copy()
+    #subset_vcf.rename(columns=sample_to_file, inplace=True)
+    subset_geno = geno.ix[:, sample_to_file.keys()].copy()
     subset_geno.rename(columns=sample_to_file, inplace=True)
     for i in subset_geno.columns:
         multi_tuples.append(i)
         multi_tuples.append(i)
         multi_tuples.append(i)
         multi_tuples.append(i)
-    multi = zip(multi_tuples, [0,1,2,3]*len(subset_geno))
+    multi = zip(multi_tuples, [0,1,2,3]*subset_geno.shape[1])
     multi_index = pd.MultiIndex.from_tuples(multi, names=['sample', 'alleles'])
     counts_matrix = pd.DataFrame(np.zeros((subset_geno.shape[0], 
                                            len(subset_geno.columns)*4), 
                                            dtype=np.int16),
-                                 index=subset_vcf.index, columns=multi_index)
+                                 index=subset_geno.index, columns=multi_index)
 
     counts_fixed = functools.partial(counts_for_individuals, c_m=counts_matrix,
                                      chrm=chrm, pos=pos)
-    subset_geno.apply(counts_fixed, axis=0)
-    #counts_matrix.to_csv(options.filename)
-    counts_matrix.save('options.filename')
+    try:
+        subset_geno.apply(counts_fixed, axis=0)
+    except ValueError:
+        subset_geno.apply(counts_fixed)
+    reget_fixed = functools.partial(reget_sample_names, mapping=file_to_sample)
+    counts_matrix.rename(columns=file_to_sample, inplace=True)
+
+    counts_matrix.to_pickle(options.filename)
 
 if __name__ == '__main__':
     main()
