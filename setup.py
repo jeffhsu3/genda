@@ -1,4 +1,5 @@
 import os, sys, glob
+import numpy
 import pysam
 
 name = 'genda'
@@ -17,15 +18,20 @@ else:
 
 cmdclass = {}
 ext_modules = []
+includes = pysam.get_include()
+includes.append(numpy.get_include())
+
 
 if use_cython:
-    print('using cython')
+    print('**********using cython*********')
     ext_modules += [
         Extension("genda.transcripts.exon_utils",
-                  ["genda/transcripts/exon_utils.pyx" ],),
+                  ["genda/transcripts/exon_utils.pyx" ], 
+                  include_dirs=includes),
+
         Extension("genda.pysam_callbacks.allele_counter",
             ["genda/pysam_callbacks/allele_counter.pyx"],
-            include_dirs=pysam.get_include(),
+            include_dirs=includes,
             define_macros=pysam.get_defines()),
     ]
     print(ext_modules)
