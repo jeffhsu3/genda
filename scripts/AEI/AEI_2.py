@@ -30,49 +30,10 @@ import pysam
 import numpy as np
 import pandas as pd
 
+
 from genda.formats.panVCF import VCF
 import genda.stats.likelihood_funcs as lf
 from genda.pysam_callbacks.allele_counter import AlleleCounter
-
-
-class lociInformation():
-    """ Contains information about a given position in a BAM file
-
-    Change into slots also make this into cython.
-    """
-
-    BASE_INDEX = {'A':0, 'a':0, 'C':1, 'c':1, 'G':2, 'g':2, 'T':3, 't':3}
-    def __init__(self, region, position, phredThreshold=0):
-        """ Location is one-based.  Internally this will get changed to zero
-        base by pysam.
-        """
-        self.region = region
-        self.position = int(position)
-        self.phredThreshold = phredThreshold
-        self.counts = np.zeros(4, dtype=np.uint8)
-
-
-    def __call__(self, pileups, position=None,
-        phredThreshold=None, genotype=None):
-        """ Genotype file contains the infromation the actualy genotyping
-        calls.
-
-        """
-        if position == None: position = self.position
-        else:  pass
-        if phredThreshold == None: qualT = self.phredThreshold
-        if pileups.pos != position-1: pass
-        else:
-            for read in pileups.pileups:
-                qpos = read.qpos
-                base_quality = read.alignment.qual[qpos]
-                if ord(base_quality)-33 > qualT:
-                    base = read.alignment.seq[qpos]
-                    base = self.BASE_INDEX[base]
-                    #strand = read.alignment.is_reverse
-                    self.counts[base] += 1
-
-
 
 def threshold_counts(counts, threshold=30, number=1):
     """ Returns True
@@ -93,23 +54,23 @@ def column_names_to_bams(colname):
     return colname + ".bam"
 
 
-def counts_for_individuals(sample_genotype, c_m=None, chrm=None, pos=None, path=None,
+def counts_for_individuals(sample_genotype, reduced=False, c_m=None, 
+                           chrm=None, pos=None, path=None,
                            bamfile_func = column_names_to_bams):
     """ Given a genotype, only run AEI on the known heterozygotes
     """
     # Restrict to heterozygotes
-    reduced_chrm = chrm[sample_genotype == 1]
-    reduced_pos = pos[sample_genotype == 1]
-    reduced_index = sample_genotype.index[sample_genotype == 1]
+    if reduced:
+        reduced_chrm = chrm[sample_genotype == 1]
+        reduced_pos = pos[sample_genotype == 1]
+        reduced_index = sample_genotype.index[sample_genotype == 1]
+    else:
+        reduced_chrm = chrm
+        reduced_pos = pos
+        reduced_index = sample_genotype.index
     bamfile = pysam.Samfile(sample_genotype.name, 'rb')
     print(sample_genotype.name)
     for i, j, k in zip(reduced_chrm, reduced_pos, reduced_index):
-        """ Vectorize this?
-        variant = lociInformation(str(i), j,
-                                  phredThreshold=0)
-        bamfile.pileup(variant.region, variant.position,
-                        variant.position+1, callback=variant)
-        """
         variant = AlleleCounter(str(i), j,
                                    phredThreshold=0)
         bamfile.fetch(variant.region, variant.position,
@@ -118,22 +79,19 @@ def counts_for_individuals(sample_genotype, c_m=None, chrm=None, pos=None, path=
         #print(variant.counts.T)
         #print(k)
         #print(c_m.columns[0:4])
-        print(variant.counts)
-        c_m.ix[k, [(sample_genotype.name, 0), (sample_genotype.name, 1), (sample_genotype.name, 2), (sample_genotype.name, 3),]] = variant.counts.T
+        c_m.ix[k, [(sample_genotype.name, 0), 
+            (sample_genotype.name, 1), 
+            (sample_genotype.name, 2), 
+            (sample_genotype.name, 3),]] = variant.counts.T
 
 
-def reget_sample_names(index, mapping):
+def reget_sample_names(x, mapping=None):
     """
     """
-    print(index)
-    sample = mapping[index[0]]
-    return(sample, index[1])
-
-
-def inner_apply(x, chrom, position):
-    """ Try inner apply for the
-    """
-    pass
+    try:
+        return mapping[x]
+    except Nonetype:
+        print('BAAAAAAAAAAAAD')
 
 
 def main():
@@ -170,16 +128,24 @@ def main():
     p.add_option("-A", "--auto_parse", action="store_true", dest="auto",
                  help="Autoparse readgroups, if set to false will assume a\
                  single sample in each file")
+    p.add_option("-R", "--reduced", action="store_true", dest="reduced",
+                 default=False)
 
     options, args = p.parse_args()
     if options.qual: pass
     else: options.qual = 20
 
+    bam_inputs = open(args[1], 'rU')
+    sample_to_file = {}
+    for line in bam_inputs:
+        line = line.split("\t")
+        sample_to_file[line[0]] = line[1].rstrip("\n").rstrip("/n")
+        file_to_sample = {v:k for k, v in sample_to_file.items()}
+
     # For testing purposes
     debug = 1
     output = open(options.filename, 'wb')
     print(options)
-
     if options.inputisvcffile:
         vcf = VCF(args[0])
         chrm = vcf.vcf['#CHROM']
@@ -187,7 +153,29 @@ def main():
         geno = vcf.geno
     elif options.G:
         pass
-        #file_a = open(options.G,  'rU') 
+    elif options.annot:
+        print('Right annotation file')
+        rsIDs = []
+        pos = []
+        file_a = pysam.Tabixfile(options.annot)
+        a_iter = file_a.fetch('18')
+        chrm = []
+        debug = 0
+        for i in a_iter:
+            i = i.split("\t")
+            if not int(i[-5]) == 0:
+                rsIDs.append(i[3])
+                chrm.append('chr' + str(i[0]))
+                pos.append(int(i[1]))
+                '''
+                debug += 1
+                if debug > 200:
+                    break
+                '''
+        geno = pd.DataFrame(np.zeros((len(rsIDs), len(sample_to_file))), 
+            index=pd.Index(rsIDs), columns = pd.Index(sample_to_file.keys()))
+        print('Chrom length')
+        print(len(chrm))
     else:
         vcf = pd.read_csv(args[0], sep=" ")
         # Read in annotation file
@@ -218,26 +206,15 @@ def main():
 
 
     # A tab delimited file mapping sample names to bams ############# 
-    bam_inputs = open(args[1], 'rU')
-    sample_to_file = {}
-    for line in bam_inputs:
-        line = line.split("\t")
-        sample_to_file[line[0]] = line[1].rstrip("\n").rstrip("/n")
-        file_to_sample = {v:k for k, v in sample_to_file.items()}
-    print(geno.ix[:, 0:5])
-
 
     INDEX_BASE = ['A', 'C', 'G', 'T']
     if options.c:
         count_threshold = options.c
     else:
         count_threshold = 20
+    print(len(pos))
 
     multi_tuples = []
-    # Temproary change the column names
-    #vcf.vcf.rename(columns=sample_to_file, inplace=True)
-    #subset_vcf = vcf.vcf.ix[:, sample_to_file.keys()].copy()
-    #subset_vcf.rename(columns=sample_to_file, inplace=True)
     subset_geno = geno.ix[:, sample_to_file.keys()].copy()
     subset_geno.rename(columns=sample_to_file, inplace=True)
     for i in subset_geno.columns:
@@ -252,14 +229,16 @@ def main():
                                            dtype=np.int16),
                                  index=subset_geno.index, columns=multi_index)
 
-    counts_fixed = functools.partial(counts_for_individuals, c_m=counts_matrix,
+    counts_fixed = functools.partial(counts_for_individuals,
+            reduced=options.reduced, c_m=counts_matrix,
                                      chrm=chrm, pos=pos)
     try:
         subset_geno.apply(counts_fixed, axis=0)
     except ValueError:
         subset_geno.apply(counts_fixed)
-    reget_fixed = functools.partial(reget_sample_names, mapping=file_to_sample)
+    reget_fixed = functools.partial(reget_sample_names, mapping = file_to_sample)
     counts_matrix.rename(columns=file_to_sample, inplace=True)
+    print(counts_matrix)
 
     counts_matrix.to_pickle(options.filename)
 
