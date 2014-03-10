@@ -78,6 +78,7 @@ def grab_gene_location(hgnc, cis_buffer=0, ensid = False):
                         int(line[2]) + cis_buffer, str(line[4]))
 
 
+
 def generate_dosage_mapping(dosage_file, mapping_file = None, interval=50):
     """
     Returns dictionary of rsIDs: fileposition from a dosage file
@@ -104,6 +105,10 @@ def eQTL_func(snps, cov, expression):
     model = sm.OLS(expression, cov)
     return(model.fit().pvalues['snps'])
 
+def two_eQTL_func(snps, cov, expression, snp2):
+    """
+    """
+    pass
 
 class eQTL(object):
     """ Python class for completing eQTLs.  Does lazy loading of all large

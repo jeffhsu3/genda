@@ -150,7 +150,9 @@ def main():
         vcf = VCF(args[0])
         chrm = vcf.vcf['#CHROM']
         pos = vcf.vcf['POS']
-        geno = vcf.geno
+        #geno = vcf.geno
+        geno = pd.DataFrame(np.zeros((len(pos), len(sample_to_file))), 
+                columns = pd.Index(sample_to_file.keys()))
     elif options.G:
         pass
     elif options.annot:
