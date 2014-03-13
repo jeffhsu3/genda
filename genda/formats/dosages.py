@@ -143,3 +143,19 @@ class eQTL(object):
             pos.append(int(i[1]))
             rsIDs.append(i[3])
 """
+
+def get_annotation(annotation, chrm):
+    ann_file = pysam.Tabixfile(annotation)
+    ann_v = ann_file.fetch(chrm)
+    rsIDs = []
+    pos = []
+    ref = []
+    alt = []
+    for i in ann_v:
+        i = i.split("\t")
+        rsIDs.append(i[3])
+        pos.append(int(i[1]))
+        ref.append(i[6])
+        alt.append(i[7])
+    annot = pd.DataFrame({'pos': pos, 'ref': ref, 'alt': alt}, index=pd.Index(rsIDs))
+    return(annot)
