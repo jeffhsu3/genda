@@ -33,17 +33,23 @@ if use_cython:
             ["genda/pysam_callbacks/allele_counter.pyx"],
             include_dirs=includes,
             define_macros=pysam.get_defines()),
+
+        Extension("genda.stats.aei_count_samples",
+            ["genda/stats/aei_count_samples.pyx"],
+            include_dirs=includes,
+            define_macros=pysam.get_defines()),
     ]
     print(ext_modules)
     cmdclass.update({'build_ext': build_ext})
+
 else:
     ext_modules += [
         Extension("genda.transcripts.exon_utils",
                   ["genda/transcripts/exon_utils.c"]),
         Extension("genda.pysam_callbacks.allele_counter",
-            ["genda/pysam_callbacks.allele_counter.c"]),
+            ["genda/pysam_callbacks/allele_counter.c"]),
         Extension("genda.pysam_callbacks.gene_counter",
-            ["genda/pysam_callbacks.allele_counter.c"]),
+            ["genda/stats/aei_count_samples.c"]),
     ]
 
 

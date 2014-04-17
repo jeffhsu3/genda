@@ -27,6 +27,7 @@ def plot_eQTL(dosage, highlight_snp=None, paths=None, title='eQTL', chrm=None,
     gtf = pysam.Tabix('/proj/genetics/Projects/shared/Subject\
              Sources/External/Ensembl/Data/Ensembl74/gtf/homo_sapiens/Homo_sapiens.GRCh37.74.gtf.bed.gz')
     commoni = [i for i in dosage.annot.index if not np.isnan(pvalues[i])]
+    commonb = [True for i in dosage.annot.index if not np.isnan(pvalues[i])]
     ax = fig.add_subplot(111)
     if highlight_snp:
         scale = dosage.dosages.apply(lambda x:\
@@ -43,3 +44,61 @@ def plot_eQTL(dosage, highlight_snp=None, paths=None, title='eQTL', chrm=None,
     cax = ax.scatter(np.asarray(dosage.annot.ix[commoni, 'pos'], dtype= np.uint32),
             np.asarray(-1*np.log10(pvalues[commoni])), 
             c=np.sqrt(scale[commoni]), cmap=cm, s=90)
+    if should_not_plot(aei_pvalues):
+        bar = plt.colorbar(cax)
+    else:
+        ax = ax/twinx()
+        aei_pvalues = pd.Series([1 if np.isnan(i) else i for i in aei_pvalues],
+                index=aei_pvalues.index)
+        aei_pvalues = np.absolute(-1 * np.log10(aei_pvalues))
+        ax2.scatter(np.asarray(dosage.annot.ix[aei_pvalues.index, 'pos'],
+            dtype=uint32), np.asarray(aei_pvalues[:]), 
+            s=60, c='orange')
+        ax2.set_ylim(0, max(aei_pvalues)+3)
+    yrange = (0,max(-1*np.log10(pvalues[commoni]))+ 3)
+    ax.set_ylim(*yrange) 
+    if zoom_in:
+        plt.xlim(zoom_in)
+    else: 
+        plt.xlim((dosage.annot.ix[0, 'pos'], dosage.annot.ix[-1, 'pos']))
+    if highlight_snp:
+        ax.scatter(np.asarray(dosage.annot.ix[highlight_snp,'pos'],dtype=uint32), 
+                np.asarray(-1*np.log10(pvalues[highlight_snp])),
+                c='red', s=200, alpha=0.5)
+    plt.ylabel('-1 * log10(p-value)', fontsize=30)
+    plt.xlabel('Genomic Position', fontsize=30)
+    bar.set_label('Linkage Disequillibrium', fontsize=30)
+    bar.ax.tick_params(labelsize=20)
+    if title:
+        plt.title(title, fontsize=40)
+    else:
+        plt.title(gene_name + ' eQTL', fontsize=40)
+    plt.ylabel('-1 * log10(pvalue)', fontsize=30)
+    if gene_name and chrm:
+        pls = gtf.fetch(chrm, dosage.annot.ix[0, 'pos'], 
+                dosage.annot.ix[-1, 'pos'])
+        paths = create_path(pls, gene_name)
+        enum_ i = int(yrang[1]/5)
+        if plot_exons:
+            if not transcripts:
+                transcripts = paths.keys()
+            else: pass
+            for i, j in paths.iteritems():
+                if i in transcripts:
+                    plot_transcript(i, paths, ax, y = enum_i,
+                            height=yrange[1]/6)
+                    enum_i += yrange[1]/5
+        else:
+            gene_bounds = grab_gene_location(dosage.gene_name, cis_buffer=0)
+            path = make_rectangle(gene_bounds[1], gene_bounds[2], 
+                    0, yrange[1] + 3)
+            patch = patches.PathPatch(path, facecolor='lightblue')
+            ax.add_patch(patch)
+    plt.tick_params(axis='both', which='major', labelsize=25)
+    plt.show()
+
+
+
+        
+
+
