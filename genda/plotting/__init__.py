@@ -1,5 +1,5 @@
 from matplotlib import figure
-form matplotlib import pyplot as plt
+import matplotlib.pyplot as plt
 from scipy.stats import linregress, pearsonr
 import numpy as np
 import pysam
