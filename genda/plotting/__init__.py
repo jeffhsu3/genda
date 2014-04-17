@@ -1,6 +1,7 @@
 from matplotlib import figure
 import matplotlib.pyplot as plt
 from scipy.stats import linregress, pearsonr
+import pandas as pd
 import numpy as np
 import pysam
 
@@ -47,7 +48,7 @@ def plot_eQTL(dosage, highlight_snp=None, paths=None, title='eQTL', chrm=None,
     if should_not_plot(aei_pvalues):
         bar = plt.colorbar(cax)
     else:
-        ax = ax/twinx()
+        ax = ax.twinx()
         aei_pvalues = pd.Series([1 if np.isnan(i) else i for i in aei_pvalues],
                 index=aei_pvalues.index)
         aei_pvalues = np.absolute(-1 * np.log10(aei_pvalues))
@@ -78,7 +79,7 @@ def plot_eQTL(dosage, highlight_snp=None, paths=None, title='eQTL', chrm=None,
         pls = gtf.fetch(chrm, dosage.annot.ix[0, 'pos'], 
                 dosage.annot.ix[-1, 'pos'])
         paths = create_path(pls, gene_name)
-        enum_ i = int(yrang[1]/5)
+        enum_i = int(yrange[1]/5)
         if plot_exons:
             if not transcripts:
                 transcripts = paths.keys()
