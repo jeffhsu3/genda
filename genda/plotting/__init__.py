@@ -1,5 +1,6 @@
 from matplotlib import figure
 import matplotlib.pyplot as plt
+from matplotlib.patches import patches
 from scipy.stats import linregress, pearsonr
 import pandas as pd
 import numpy as np
@@ -22,7 +23,7 @@ def plot_eQTL(dosage, highlight_snp=None, paths=None, title='eQTL', chrm=None,
     """
     pvalues = dosage.pvalues
     gene_name = dosage.gene_name
-    fig = figure(num=None, figsize=(22, 10), dpi=300, facecolor='w',
+    fig = plt.figure(num=None, figsize=(22, 10), dpi=300, facecolor='w',
             edgecolor='k')
     # Todo add another argument
     gtf = pysam.Tabix('/proj/genetics/Projects/shared/Subject\
@@ -100,6 +101,18 @@ def plot_eQTL(dosage, highlight_snp=None, paths=None, title='eQTL', chrm=None,
 
 
 
+def plot_matrixeQTL(matrixeQTL, annot, gene_name):
+    """
+    """
+    fig = figure(num=None, figsize=(22, 10), dpi=300, facecolor='w',
+            edgecolor='k')
+    ax = fig.add_subplot(111)
+    eQTL_ax = ax.scatter( annot['pos'], 
+            (-1*np.log10(matrixeQTL.ix[matrixeQTL.ix[:, 1]\
+                    == gene_name, ])).values)
+    ax.set_ylim(0, 20)
+    plt.show()
+    
         
 
 

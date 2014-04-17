@@ -8,9 +8,13 @@ def make_rectangle(start, end, y1, y2):
             (end, y1),
             (start, y1),
             ]
-    codes = [Path.MOVETO,
+    codes = [
+            Path.MOVETO,
             Path.LINETO,
             Path.LINETO,
             Path.LINETO,
             Path.CLOSEPOLY,
+            ]
     return (Path(verts, codes))
+
+def create_path():
