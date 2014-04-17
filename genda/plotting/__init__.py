@@ -1,6 +1,6 @@
 from matplotlib import figure
 import matplotlib.pyplot as plt
-from matplotlib.patches import patches
+import matplotlib.patches as patches
 from scipy.stats import linregress, pearsonr
 import pandas as pd
 import numpy as np
