@@ -3,6 +3,7 @@
 import pickle
 import itertools
 import heapq
+from collections import defaultdict
 
 import numpy as np
 import pandas as pd
@@ -91,7 +92,8 @@ class AEIData(object):
             sums = (ref + alt) < count_threshold
             ref[np.logical_or(hets, sums)] = np.NaN
             alt[np.logical_or(hets, sums)] = np.NaN
-            self.binom_p = pd.DataFrame(binom.sf(alt - 1, ref + alt, 0.5), columns=self.df.columns,index=ref.index)
+            self.binom_p = pd.DataFrame(binom.sf(alt - 1, ref + alt, 0.5), 
+                    columns=self.df.columns,index=ref.index)
             self.ratio = ref/((ref+alt)/float(1))
         except AttributeError:
             print("Need to run set_annotations and set_genotyeps first")
@@ -189,6 +191,27 @@ class CountMatrix(object):
         self.df.items
 
 
+
+def collide_snps(snp_annotation, gff, genes_of_interest = None):
+    """ Grabs all SNPs that reside within a gene.  
+
+    Arguments
+    ---------
+
+    Returns
+    -------
+    A dictionary of genes with keys being the gene names and a list of SNPs
+    being the values.
+    """
+    out_dict = defaultdict(list)
+    gene_ids = gff[8].apply(lambda x: (x.split("; ")[-1]
+                                       .lstrip('gene_id "')
+                                       .rstrip('"')))
+    if genes_of_interest:
+        gene_ids = gene_ids.apply(lambda x: x in genes_of_interest)
+    m_matrix = gff.ix[np.logical_and(gene_ids, gff.ix[:, 2] == 'exonic_part'),
+            [2,3,4,8]]
+    #gene_ids = gene_ids[np.logical_and(
 
 
 

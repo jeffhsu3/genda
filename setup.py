@@ -60,10 +60,15 @@ metadata = {'name':name,
             'scripts': glob.glob('scripts/*.py'),
             'description':'genda',
             'author':'Jeffrey Hsu',
-            'packages':['genda', 'genda.stats',
-                        'genda.parsing','genda.formats',
+            'packages':['genda', 
+                        'genda.stats',
+                        'genda.parsing',
+                        'genda.formats',
                         'genda.pysam_callbacks',
-                       'genda.transcripts', 'genda.AEI'],
+                        'genda.transcripts', 
+                        'genda.AEI', 
+                        'genda.plotting',
+                        'genda.eQTL'],
 }
 
 
