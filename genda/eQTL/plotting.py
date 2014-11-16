@@ -1,11 +1,13 @@
 """ Plotting functions for eQTLs
 """
 import numpy as np
-#import pandas as pd
+import pandas as pd
 import matplotlib
-print(matplotlib.get_backend())
+import statsmodels.api as sm
 
 import matplotlib.pyplot as plt
+from statsmodels.graphics import utils as smutils
+from statsmodels.graphics.regressionplots import abline_plot
 
 from genda.plotting import should_not_plot, add_gene_bounderies
 from genda import calculate_minor_allele_frequency, calculate_ld
@@ -21,13 +23,98 @@ def var_boxplot(ax, x, colors=None):
         pass
 
 
-def plot_dosage_by_rsID(chrom, gene, rsID, cov_mat, title = None, ax = None):
+class gene_reference(object):
     """
     """
-    chrom = chrom - 1
+    def __init__(self, chrom, gene, rsID = None):
+        """
+        """
+        self.chrom = chrom
+        self.gene = gene
+        self.rsID = rsID
+
+
+def plot_dosage_by_rsID(gene_reference, dos, cov_mat, counts,
+        title = None, ax = None,
+        additional_covar=None, 
+        adjx=True, adjy=True):
+    """
+    Arguments:
+    ---------
+    gene_reference - a gene reference object
+    meqtl - a list of matrix-eQTL objects, one for each chromosome
+    cov_mat - covariate matrix
+    counts - counts
+    additional_covar - a matrix of same rows as cov_mat to add to the model
+    """
+    gr = gene_reference
+    cov_mat_t = cov_mat.copy(deep=True)
+    try:
+        geno = dos.ix[gr.rsID, cov_mat_t.index]
+    except pd.core.indexing.IndexingError:
+        geno = dos.ix[cov_mat_t.index]
+    cov_mat_t[gr.rsID] = geno
+    c = counts.ix[gr.gene, cov_mat_t.index]
+    if adjx:
+        results = sm.OLS(geno, cov_mat).fit()
+        adj_dos_mat = geno -\
+                np.dot(results.params, cov_mat.T)
+    else: 
+        adj_dos_mat = dos.ix[gr.rsID,:]
+
+    if adjy:
+        results = sm.OLS(c, cov_mat).fit()
+        adj_counts = c - np.dot(results.params, cov_mat.T)
+        const = results.params.const
+    else:
+        adj_counts = counts.ix[gr.gene, cov_mat_t.index]
+        const = 0
+    # Need to grab original genotypes
+    colors = []
+    # Make this into a function
+    color_dict = np.linspace(0, 1, 3)
+    for i in geno:
+        if i <= 0.5:
+            colors.append(color_dict[0])
+        elif i > 0.5 and i <= 1.5:
+            colors.append(color_dict[1])
+        else:
+            colors.append(color_dict[2])
     if ax:
-        pass
-    
+        ax_orig = True
+    else:
+        ax_orig = None
+        fig, ax = plt.subplots(nrows=1, ncols=1, sharey=False,
+                sharex=False, subplot_kw=dict(axisbg='#FFFFFF'))
+    ax.scatter(adj_dos_mat, adj_counts + const, s=50,
+             c = colors)
+    if not title:
+        title = gr.gene
+    ax.set_title('%s partial regression\non %s' % (title, gr.rsID), 
+            fontsize=22)
+    ax.set_ylabel('$log_{2}$ CPM', fontsize=16)
+    ax.set_xlabel('Fitted Dosages', fontsize=16)
+    xticks = ax.get_xticks()
+    yticks = ax.get_yticks()
+    ax.set_xticks(xticks[1::2])
+    ax.set_yticks(yticks[1::2])
+    fitted_line = sm.OLS(adj_counts, adj_dos_mat).fit()
+    abline_plot(const, fitted_line.params[0], color='k', ax=ax)
+    test = sm.OLS(c, cov_mat_t).fit()
+    if test.params[gr.rsID] > 0:
+        annot_y = - 1
+    else:
+        annot_y = 1
+    yrange = yticks[-1] - yticks[0]
+    ax.tick_params(axis='both', which='major', labelsize=16)
+    ax.text(xticks[0] + 0.025 , yticks[annot_y] + annot_y/2*yrange/5, 
+            '$R^{2}$=%s' % str(test.rsquared)[0:4], 
+            style='italic', fontsize=16)
+    if ax_orig:
+        return(ax, test)
+    else:
+        return(fig, test)
+
 
 def subset_meQTL(meQTL, gene_name):
     """
@@ -41,28 +128,41 @@ def subset_meQTL(meQTL, gene_name):
     return(subset)
 
 
+
 def plot_eQTL(meQTL, gene_name, annotation, dosage, ax=None,
         symbol=None, focus_snp=None, gene_annot=None):
     """ Plot eQTL from a full_matrix object
-
     Arguments
     ---------
     meQTL - a matrix eQTL dataframe or a series of pvalues
     gene_name - gene name
-    annotation - snp annotation
+    annotation - snp annotation dataframe, index is rsID
+    dosage - a dosage dataframe
+    ax - axis to plot into
     """
     subset = subset_meQTL(meQTL, gene_name)
+
+    if isinstance(subset.index, pd.core.index.MultiIndex):
+        subset.index = subset.index.get_level_values('SNP')
+    else: pass
+
     x_formatter = matplotlib.ticker.ScalarFormatter(useOffset=False)
     cm = plt.cm.get_cmap('Blues')
     x_scale= 1e6
     try:
-        adj_pv = -1*np.log10(subset.ix[:,4])
-        pos = np.asarray(annotation.ix[subset.ix[:, 0], 'pos'], dtype=np.uint32)/x_scale
-        dosage_sub = dosage.ix[subset.ix[:, "SNP"],:]
+        adj_pv = -1*np.log10(subset.ix[:,'p-value'])
     except IndexError:
         adj_pv = -1*np.log10(subset.iloc[:,0])
-        pos = np.asarray(annotation.ix[subset.index, 'pos'], dtype=np.uint32)/x_scale
-        dosage_sub = dosage.ix[subset.index,:]
+    except pd.core.indexing.IndexingError:
+        adj_pv = -1*np.log10(subset.iloc[:])
+    try:
+        pos = np.asarray(annotation.ix[subset.index, 'pos'], 
+                dtype=np.double)/x_scale
+    except KeyError:
+        pos = np.asarray(annotation.ix[subset.index, 1], 
+                dtype=np.double)/x_scale
+    dosage_sub = dosage.ix[subset.index,:]
+
     if should_not_plot(dosage):
         dosage_maf =\
                 calculate_minor_allele_frequency(dosage_sub)
@@ -83,37 +183,44 @@ def plot_eQTL(meQTL, gene_name, annotation, dosage, ax=None,
     snp_pv = adj_pv.iloc[iix[0]]
     color1 = calculate_ld(dosage_sub,
             snp)[dosage_sub.index].values
-    plt.ioff()
     if ax is None:
-        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(18, 6), 
+        ax_orig = False 
+        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(16, 6), 
                                sharey=False, sharex=True,
                                subplot_kw=dict(axisbg='#FFFFFF'))
-        ax.tick_params(axis='both', which='major', labelsize=24)
-        im = ax.scatter(pos, adj_pv, s=dosage_maf, c = color1)
-        cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
+        fig.tight_layout() 
+        fig.subplots_adjust(right=0.8, bottom=0.2)
+        #bar.ax.set_position((0.85, 0.14, 0.02, 0.725))
+    else:
+        ax_orig = True
+    ax.set_xlim((min(pos) -0.01, max(pos) + 0.01))
+    ylim = (max(adj_pv) + max(adj_pv/6.0))
+    ax.set_ylim((-0.01,  ylim))
+    ax.xaxis.set_major_formatter(x_formatter)
+    im = ax.scatter(pos, adj_pv, s=dosage_maf, c = color1)
+    arrow_start = ylim - max(adj_pv/6.0)/2
+    arrow_length = max(adj_pv/6.0/2) - max(adj_pv/6.0/2)/8
+    ax.arrow(snpx, arrow_start, 0, - arrow_length, 
+            head_width=0.01, head_length=0.1, fc='k',
+            ec='k')
+    ax.text(snpx-0.05 , arrow_start + max(adj_pv/6.0)/5.0, 
+            snp, style='italic', fontsize=16)
+    ax.tick_params(axis='both', which='major', labelsize=24)
+    ax.set_ylabel(r'$-log_{10}$ p-value', fontsize=24)
+    ax.set_xlabel(r'Position (Mb)', fontsize=24)
+    if should_not_plot(gene_annot):
+        patch = add_gene_bounderies(ax, gene_annot, 
+                gene_name, x_scale)
+        ax.add_patch(patch)
+    else: pass
+    if symbol:
+        gene_name = symbol
+    ax.set_title(r'eQTL for %s' % gene_name, fontsize=30)
+    if ax_orig:
+        return(ax)
+    else: 
+        cbar_ax = fig.add_axes([0.87, 0.15, 0.05, 0.7])
         bar = fig.colorbar(im, cax=cbar_ax)
         bar.ax.tick_params(labelsize=18)  
         bar.set_label('r$^{2}$', fontsize=24)
-        bar.ax.set_position((0.8125, 0.14, 0.02, 0.725))
-        ax.xaxis.set_major_formatter(x_formatter)
-        ax.arrow(snpx, snp_pv + 1.3, 0, -1.2, 
-                head_width=0.01, head_length=0.1, fc='k',
-                ec='k')
-        ax.text(snpx-0.05 , snp_pv + 1.5, snp, 
-                style='italic', fontsize=16)
-        if should_not_plot(gene_annot):
-            patch = add_gene_bounderies(ax, gene_annot, 
-                    gene_name, x_scale)
-            ax.add_patch(patch)
-        else: pass
-        fig.subplots_adjust(right=0.8)
-        ax.set_xlim((min(pos) -0.01, max(pos) + 0.01))
-        ax.set_ylim((-0.01, max(adj_pv) + 2))
-    else:
-        pass
-    if symbol:
-        gene_name = symbol
-    ax.set_ylabel(r'$-log_{10}$ p-value', fontsize=24)
-    ax.set_xlabel(r'Position (Mb)', fontsize=24)
-    ax.set_title(r'eQTL for %s' % gene_name, fontsize=30)
-    return(fig)
+        return(fig)
