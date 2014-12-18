@@ -7,7 +7,7 @@ import statsmodels.api as sm
 
 def calculate_top_cond(counts, dos, cov_mat, rsid1, 
         return_rsid1=False):
-    """
+    """ 
     """
     acov_mat = cov_mat.copy(deep=True)
     acov_mat[rsid1] = dos.ix[rsid1, acov_mat.index]

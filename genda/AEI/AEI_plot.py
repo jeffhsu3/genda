@@ -267,6 +267,7 @@ def aei_test_2(full, aei_df, annot_table, gene_snps, gene, num_threshold=5):
     aei_object.hets_dict = hets_dict
     aei_object.maf = maf
     aei_object.outliers = outliers
+    # This needs to change
     return(aei_object)
 
 
@@ -517,119 +518,6 @@ def plot_eQTL(meQTL, gene_name, annotation, dosage, ax=None,
     return(fig)
 
 
-
-
-def plot_replication(matrix_a, matrix_b, gene_name, annotation, dosage_a=None,
-        dosage_b=None, sim_snps=False, symbol=None, 
-        focus_snp = None,
-        gene_annot=None, 
-        plot_one=False):
-    """ 
-    Comparison plot between eqtls.
-    Parameters
-    ----------
-
-    :TODO combine, matrix_a, and matrix_b into an object, maybe make the 
-    multi-ethnic groups into a list ?
-    :TODO make this more generalizable
-    """
-
-    index_a = matrix_a.gene == gene_name
-    index_b = matrix_b.gene == gene_name
-    subset_a = matrix_a.ix[index_a, :] 
-    subset_b = matrix_b.ix[index_b, :]
-    subset_a.index = pd.Index(subset_a.ix[:, 0])
-    subset_b.index = pd.Index(subset_b.ix[:, 0])
-    if sim_snps:
-        #common_ix = np.intersect1d(subset_a.index, subset_b.index)
-        common_ix = [i for i in subset_a.index if i in subset_b.index]
-        subset_a = subset_a.ix[common_ix,:]
-        subset_b = subset_b.ix[common_ix,:]
-    try:
-        min_a = subset_a.iloc[np.nanargmin(subset_a.ix[:, 4]), :]
-        min_b = subset_b.iloc[np.nanargmin(subset_b.ix[:, 4]), :]
-    except ValueError:
-        pass
-    cm = plt.cm.get_cmap('Blues')
-    if should_not_plot(dosage_a):
-        dosage_a_maf =\
-                calculate_minor_allele_frequency(dosage_a.ix[subset_a.ix[:,0], :])
-        dosage_a_maf =((150 * dosage_a_maf) + 20) 
-    else:
-        dosage_a_maf = np.repeat(1, subset_a.shape[0])
-
-    if should_not_plot(dosage_b):
-        dosage_b_maf = calculate_minor_allele_frequency(dosage_b.ix[subset_b.ix[:,
-            0],:])
-        dosage_b_maf =((150 * dosage_b_maf) + 20) 
-    else:
-        dosage_b_maf = np.repeat(10, subset_b.shape[0])
-    x_scale= 1e6
-    pos = np.asarray(annotation.ix[subset_a.ix[:, 0], 'pos'], dtype=np.uint32)/x_scale
-    pos_b = np.asarray(annotation.ix[subset_b.ix[:,0], 'pos'],
-            dtype=np.uint32)/x_scale
-    fig, ax = plt.subplots(nrows=2, ncols=1, figsize=(18, 12), 
-                           sharey=False, sharex=True,
-                           subplot_kw=dict(axisbg='#FFFFFF'))
-    ax[0].tick_params(axis='both', which='major', labelsize=24)
-    ax[1].tick_params(axis='both', which='major', labelsize=24)
-    adj_pvalue_a = -1*np.log10(subset_a.ix[:,4])
-    adj_pvalue_b = -1*np.log10(subset_b.ix[:,4])
-    snp1 = subset_a.iloc[np.nanargmax(adj_pvalue_a), 0]
-    snp2 = subset_b.iloc[np.nanargmax(adj_pvalue_b), 0]
-    # Need to reorder the color based on positioning
-    if focus_snp:
-        snp1 = focus_snp
-        snp2 = focus_snp
-    else: pass
-
-    color1 = calculate_ld(dosage_a.ix[subset_a.ix[:, "SNP"],:] ,
-            snp1)[subset_a.ix[:, 'SNP']]
-    color2 = calculate_ld(dosage_b.ix[subset_b.ix[:, "SNP"],:] ,
-        snp2)[subset_b.ix[:, 'SNP']]
-    #print('SNP not found after subsetting (Not in both ethnicities)')
-    if symbol:
-        ax[0].set_title(r'European-American eQTL for %s' % symbol, fontsize=30)
-        ax[1].set_title(r'African-American eQTL for %s' % symbol, fontsize=30)
-    else:
-        ax[0].set_title(r'European-American eQTL for %s' % gene_name, fontsize=30)
-        ax[1].set_title(r'African-American eQTL for %s' % gene_name, fontsize=30)
-    im = ax[0].scatter(pos, adj_pvalue_a, s=dosage_a_maf, c = color1)
-    ax[0].set_ylabel(r'$-log_{10}$ p-value', fontsize=24)
-    ax[1].scatter(pos_b, adj_pvalue_b, s=dosage_b_maf, c= color2)
-    ax[1].set_ylabel(r'$-log_{10}$ p-value', fontsize=24)
-    ax[1].set_xlabel(r'Position (Mb)', fontsize=24)
-    ax[0].set_xlim((min(pos) -0.01, max(pos) + 0.01))
-    #ax[0].set_ylim((0, 60))
-    ax[0].set_ylim((-0.01, max(adj_pvalue_a) + 2))
-    ax[1].set_ylim((-0.01, max(adj_pvalue_b) + 2))
-    if gene_annot:
-        #gtf = pysam.Tabixfile(gene_annot)
-        #pls = gtf.fetch('chr1', min(pos) - 0.05, max(pos) + 0.05)
-        gene_bounds = grab_gene_location(gene_name, cis_buffer=0)
-        path_a = make_rectangle(float(gene_bounds[1])/x_scale, 
-                float(gene_bounds[2])/x_scale,
-                0, max(adj_pvalue_a) + 20)
-        patch = patches.PathPatch(path_a, facecolor='yellow', alpha=0.2)
-        patch_b = copy.copy(patch)
-        ax[0].add_patch(patch)
-        ax[1].add_patch(patch_b)
-
-    #ax[1].add_patch(patch_1)
-    """
-    ax[0].text(min(pos) + 0.05 , max(adj_pvalue_a) - 0.5, 
-            r'$\DeltaDDF: $', fontsize=20)
-    """
-    bad = [i for i in subset_a.index if i not in subset_b.index]
-    x_formatter = matplotlib.ticker.ScalarFormatter(useOffset=False)
-    ax[0].xaxis.set_major_formatter(x_formatter)
-    ax[1].xaxis.set_major_formatter(x_formatter)
-    fig.subplots_adjust(right=0.8)
-    cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
-    bar = fig.colorbar(im, cax=cbar_ax)
-    bar.ax.tick_params(labelsize=18)  
-    bar.set_label('r$^{2}$', fontsize=24)
-    return(fig)
 
 
 def test_replication(matrix_a, matrix_b, gene_name):

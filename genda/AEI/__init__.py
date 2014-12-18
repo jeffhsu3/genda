@@ -8,6 +8,7 @@ AEI funcs
 """
 
 from .AEI_plot import *
+from .AEI import *
 
 
 

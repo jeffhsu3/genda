@@ -130,7 +130,7 @@ def subset_meQTL(meQTL, gene_name):
 
 
 def plot_eQTL(meQTL, gene_name, annotation, dosage, ax=None,
-        symbol=None, focus_snp=None, gene_annot=None):
+        symbol=None, focus_snp=None, gene_annot=None, **kwargs):
     """ Plot eQTL from a full_matrix object
     Arguments
     ---------
@@ -197,6 +197,7 @@ def plot_eQTL(meQTL, gene_name, annotation, dosage, ax=None,
     ylim = (max(adj_pv) + max(adj_pv/6.0))
     ax.set_ylim((-0.01,  ylim))
     ax.xaxis.set_major_formatter(x_formatter)
+    ### Actual scatter #############################
     im = ax.scatter(pos, adj_pv, s=dosage_maf, c = color1)
     arrow_start = ylim - max(adj_pv/6.0)/2
     arrow_length = max(adj_pv/6.0/2) - max(adj_pv/6.0/2)/8
@@ -206,7 +207,7 @@ def plot_eQTL(meQTL, gene_name, annotation, dosage, ax=None,
     ax.text(snpx-0.05 , arrow_start + max(adj_pv/6.0)/5.0, 
             snp, style='italic', fontsize=16)
     ax.tick_params(axis='both', which='major', labelsize=24)
-    ax.set_ylabel(r'$-log_{10}$ p-value', fontsize=24)
+    ax.set_ylabel(r'$-log_{10}$ eQTL p-value', fontsize=18)
     ax.set_xlabel(r'Position (Mb)', fontsize=24)
     if should_not_plot(gene_annot):
         patch = add_gene_bounderies(ax, gene_annot, 
@@ -215,7 +216,7 @@ def plot_eQTL(meQTL, gene_name, annotation, dosage, ax=None,
     else: pass
     if symbol:
         gene_name = symbol
-    ax.set_title(r'eQTL for %s' % gene_name, fontsize=30)
+    #ax.set_title(r'eQTL for %s' % gene_name, fontsize=25)
     if ax_orig:
         return(ax)
     else: 
