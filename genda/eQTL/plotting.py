@@ -206,9 +206,8 @@ def plot_eQTL(meQTL, gene_name, annotation, dosage, ax=None,
             ec='k')
     ax.text(snpx-0.05 , arrow_start + max(adj_pv/6.0)/5.0, 
             snp, style='italic', fontsize=16)
-    ax.tick_params(axis='both', which='major', labelsize=24)
-    ax.set_ylabel(r'$-log_{10}$ eQTL p-value', fontsize=18)
-    ax.set_xlabel(r'Position (Mb)', fontsize=24)
+    ax.set_ylabel(r'$-log_{10}$ eQTL p-value')
+    ax.set_xlabel(r'Position (Mb)')
     if should_not_plot(gene_annot):
         patch = add_gene_bounderies(ax, gene_annot, 
                 gene_name, x_scale)

@@ -8,10 +8,20 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-
 from genda import calculate_minor_allele_frequency, calculate_ld
 from genda.plotting import should_not_plot, add_gene_bounderies
 from genda.eQTL import plot_eQTL
+
+
+#:TODO move this to plotting utils
+def remove_tr_spines(ax):
+    invisible_spines = ['top', 'right']
+    for i in invisible_spines:
+        ax.spines[i].set_visible(False)
+        ax.xaxis.set_ticks_position('bottom')
+        ax.yaxis.set_ticks_position('left')
+    
+    return(ax)
 
 
 def single_snp_aei_test(geno, outliers, allelic_ratio, num_threshold=5):
@@ -26,7 +36,7 @@ def single_snp_aei_test(geno, outliers, allelic_ratio, num_threshold=5):
         return(ttest_ind(het_combined, homo_combined, equal_var=False)[1])
 
 
-def single_snp_aei_test2(geno, allelic_ratio, num_threshold=10):
+def single_snp_aei_test2(geno, allelic_ratio, num_threshold=5):
     het_combined = allelic_ratio[np.array(geno == 1)]
     homo_combined = allelic_ratio[np.array(np.logical_or(geno==0, geno==2))]
     if len(het_combined) < num_threshold or len(homo_combined) < num_threshold:
@@ -85,10 +95,10 @@ class AEI(object):
         not_indel = [i for i in self.aei.index if\
                 len(self.snp_annot.ix[i, 'a1']) == 1]
         hets = dosage_round(self.geno.ix[not_indel, :])[ids]
-        pvalues_out = np.zeros((self.geno.shape[0], len(not_indel)),
+        pvalues_out = np.ones((self.geno.shape[0], len(not_indel)),
             dtype=np.double)
         m_size = (len(ids), len(not_indel))
-        aei_ratios= pd.DataFrame(
+        aei_ratios = pd.DataFrame(
                 np.zeros(m_size, dtype=np.uint32),
                 index=pd.Index(ids), 
                 columns=pd.Index(not_indel))
@@ -127,27 +137,22 @@ class AEI(object):
                 overall_counts.ix[i, :] = [np.nansum(ref), np.nansum(alt)]
                 allelic_ratio = alt/ref
                 aei_ratios.ix[hi.index, i] = pd.Series(allelic_ratio, index=hi.index)
-                # Flip 
-                allelic_ratio[allelic_ratio > 1] = 1/allelic_ratio[allelic_ratio > 1]
-                outliers = (np.log2(allelic_ratio) < -4.5)
+                # Flip the ratio
+                allelic_ratio[allelic_ratio > 1] =\
+                        1/allelic_ratio[allelic_ratio > 1]
+                outliers = (np.log2(allelic_ratio) < -3.5)
                 allelic_ratio = allelic_ratio[np.logical_not(outliers)]
                 if not single_snp:
-                    pvalues_out.iloc[:,i] = (self.geno.ix[:, hi.index].
+                    geno_t = self.geno.ix[:, hi.index]
+                    geno_t = dosage_round(geno_t[np.logical_not(outliers)])
+                    pvalues_out.iloc[:,i] = (geno_t.
                                        apply(single_snp_aei_test, axis=1, 
                                        args=(outliers, allelic_ratio)))
                 else:
-                    try:
-                        geno_t = self.geno.ix[single_snp, hi.index]
-                        geno_t = geno_t[np.logical_not(outliers)]
-                        pvalues_out.ix[single_snp, i] =\
-                                single_snp_aei_test2(geno_t, allelic_ratio)
-                    except ValueError:
-                        geno_t = self.geno.ix[single_snp, hi.index]
-                        geno_t = geno_t.iloc[0,:]
-                        geno_t = geno_t[np.logical_not(outliers)]
-                        pvalues_out.ix[single_snp, i] =\
-                                single_snp_aei_test2(geno_t, allelic_ratio)
-                        # Why are there two identical indexes for geno?
+                    geno_t = self.geno.ix[single_snp, hi.index]
+                    geno_t = dosage_round(geno_t[np.logical_not(outliers)])
+                    pvalues_out.ix[single_snp, i] =\
+                            single_snp_aei_test2(geno_t, allelic_ratio)
                 hets_dict[j] = hi.index
             else:
                 outliers = np.repeat(False, len(hi))
@@ -158,13 +163,100 @@ class AEI(object):
         overall_counts['Nhets'] = sufficient_hets
         self.overall_counts = overall_counts
         self.outliers = outliers
+        self.ratios = aei_ratios
+        # Outliers need to be fixed only set on the most recent one atm
         
 
 
-    def aei_bar_plot(self, csnp, tsnp, ax=None):
+    def aei_barplot(self, csnp, tsnp, ax=None, gene_name=None, title=True):
         """ AEI barplot
+
+        Arguments
+        ---------
+        csnp - cis snp to test association
+        tsnp - tag snp to run the AEI test on
+        ax - axis to plot on if None creates a new figure
+        gene_name - replace the default ID ie replace with more 
+        readable gene symbol
         """
-        pass
+        color = dosage_round(self.geno.ix[csnp, self.hets_dict[tsnp]])
+        nplots = 1
+        if ax:
+            pass
+        else:
+            fig, ax = plt.subplots(nrows=nplots, ncols=1, 
+                    figsize=(12, 4*nplots), sharey=False,
+                    sharex=True, subplot_kw=dict(axisbg='#FFFFFF'))
+        title_str = ('AEI at tag SNP {tag} for {gene}\n shaded by'
+                'genotype at {csnp}')
+        if gene_name:
+            title_str = title_str.format(tag=tsnp, 
+                    gene=gene_name, csnp=csnp) 
+        else:
+            title_str = title_str.format(tag=tsnp, 
+                    gene=self.gene_name, csnp=csnp) 
+        if title:
+            ax.set_title(title_str)
+        else:  
+            ax.set_title('')
+        ax.set_xlabel('Samples')
+        ax.set_ylabel('$log_{2}$ Allelic Fraction')
+        width = 0.5
+        allelic_ratio = self.ratios.ix[self.hets_dict[tsnp], tsnp]
+        allelic_ratio_i = np.argsort(allelic_ratio.values)
+        allelic_ratio = np.log2(allelic_ratio.iloc[allelic_ratio_i])
+        outliers =  np.logical_not(np.logical_or(
+                          allelic_ratio < -3.0 ,
+                          allelic_ratio > 3.0
+                          )) 
+        color_geno = []
+        color = color[allelic_ratio_i][outliers]
+        for i in color:
+            if i == 0 or i ==2:
+                color_geno.append('green')
+            else:
+                color_geno.append('#FFAE00')
+        allelic_ratio = allelic_ratio[outliers]
+        ind = np.arange(len(allelic_ratio))
+        rects1 = ax.bar(ind, allelic_ratio, width, color = color_geno, 
+                linewidth=0)
+        ax.set_xlim((-1, len(allelic_ratio+1)))
+        ax = remove_tr_spines(ax)
+        if ax: 
+            return(ax)
+        else:
+            fig.tight_layout()
+            return(fig)
+
+
+    def aei_plot_single(self, tsnp, ax=None):
+        """
+        Arguments
+        ---------
+        tsnp - a particular tag snp to plot association with
+        """
+        x_scale = 1e6
+        cm = plt.cm.get_cmap('Blues')
+        size_maf = ((200 * self.maf) + 20)
+        pos = self.snp_annot.loc[:, 'pos']
+        pos = np.asarray(pos, dtype=np.uint64)/x_scale
+        if ax:
+            pass
+        else:
+            fig, ax = plt.subplots(nrows=1 , ncols=1, 
+                    sharey=False, sharex=True, 
+                    subplot_kw=dict(axisbg='#FFFFFF'))
+        adj_pvalue = -1*np.log10(self.pvalues.loc[:, tsnp])
+        scatter = ax.scatter(pos, 
+                        adj_pvalue, s=size_maf)
+        ax.set_ylabel(r'-$log_{10}$ AEI p-value')
+        ylim = (max(adj_pvalue) + max(adj_pvalue/6.0))
+        ax.set_ylim((-0.01, ylim))
+        
+        if ax:
+            return(ax)
+        else:
+            return(fig)
 
 
     def aei_plot(self, meQTL, snp_plot=None, n_sufficient_hets=50, 
@@ -178,8 +270,6 @@ class AEI(object):
         ax - matplotlib axis in which to add plot (for multiploting) NOT
         IMPLMENTED
         """
-        if ax:
-            raise NotImplementedError
         x_scale = 1e6
         size_maf = ((200 * self.maf) + 20)
         cm = plt.cm.get_cmap('Blues')
@@ -195,15 +285,20 @@ class AEI(object):
                         self.overall_counts.sum(axis=1)>=500)]
         nplots = len(suff_hets) + 2
         pos = self.snp_annot.loc[:, 'pos']
-        #pos = self.meQTL.loc[:, 'pos']
         pos = np.asarray(pos, dtype=np.uint64)/x_scale
-
-        fig, ax = plt.subplots(nrows=int(ceil(nplots/2.0)) , ncols=2,
-                figsize=(20, 4*nplots/2), 
-                sharey=False, sharex=True, 
-                subplot_kw=dict(axisbg='#FFFFFF'))
+        if ax:
+            pass
+        else:
+            if len(suff_hets) > 1:
+                ncols = 2
+            else: 
+                ncols = 1
+            fig, ax = plt.subplots(nrows=int(ceil(nplots/ncols)) , ncols=2,
+                    figsize=(20, 4*nplots/2), 
+                    sharey=False, sharex=True, 
+                    subplot_kw=dict(axisbg='#FFFFFF'))
         ko = 0
-        for j in range(2):
+        for j in range(ncols):
             io = 0
             for i in range(int(ceil(len(suff_hets)/2.0))):
                 if ko < len(suff_hets):
@@ -211,20 +306,9 @@ class AEI(object):
                     adj_pvalue = -1*np.log10(self.pvalues.loc[:, curr])
                     scatter = ax[io, j].scatter(pos, 
                                     adj_pvalue, s=30)
-                    ax[io, j].set_ylabel(r'-$log_{10}$ AEI p-value',
-                            fontsize=18)
+                    ax[io, j].set_ylabel(r'-$log_{10}$ AEI p-value')
                     ylim = (max(adj_pvalue) + max(adj_pvalue/6.0))
                     ax[io, j].set_ylim((-0.01, ylim))
-                    """ 
-                    ax[io, j].set_ylabel("\n".join(wrap(r'AEI -$log_{10}$ p-value ',
-                        'for {tag}'.format(tag=curr)), 30), fontsize=15)
-                    """
-                    #ax[io, j].set_xlabel('Genomic Position (mb)', fontsize=15)
-                    """
-                    ax[io, j].set_title('AEI plot for %s (N=%i)' %
-                            (curr,
-                        self.overall_counts.ix[suff_hets.index[ko], 'Nhets']), fontsize=25)
-                    """
                     # Need to make the text relative positioning
                     #labels = list(self.annot_table.index)
                     #tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=labels)
@@ -235,17 +319,12 @@ class AEI(object):
             scatter = ax[-1, j].scatter(pos,
                     -1*np.log10(meQTL.ix[self.snp_annot.index , 'p-value']),
                                      s=size_maf, cmap=cm)
-            ax[-1, j].set_ylabel('-$log_{10}$ p-value', fontsize=15)
-            ax[-1, j].set_xlabel('Genomic Position (mb)', fontsize=15)
+            ax[-1, j].set_ylabel('-$log_{10}$ p-value')
+            ax[-1, j].set_xlabel('Genomic Position (mb)')
             ax[-1, j] = plot_eQTL(meQTL, gene_name = self.gene_name,
                   annotation=self.snp_annot, dosage=self.geno, ax = ax[-1,j],
                   **kwargs)
-            invisible_spines = ['top', 'right']
-            # This needs to be a function
-            for i in invisible_spines:
-                ax[-1, j].spines[i].set_visible(False)
-                ax[-1, j].xaxis.set_ticks_position('bottom')
-                ax[-1, j].yaxis.set_ticks_position('left')
+            ax[-1, j] = remove_tr_spines(ax[-1, j])
             #ax[-1, j].set_title('%s eQTL plot' % (self.gene_name,), fontsize=25)
             '''
             labels = list(self.snp_table.index)
