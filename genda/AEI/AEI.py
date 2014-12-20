@@ -71,8 +71,12 @@ class AEI(object):
         # :TODO calculate MAF of the snps in self.geno
         # :TODO assert self.geno and self.snp_annot are same shape
         self.snp_annot = snp_annot
-        self.sample_ids = [i[0] for i in self.aei][::4]
-        ids = pd.Index(self.sample_ids).intersection(self.geno.columns)
+        try:
+            self.sample_ids = [i[0] for i in self.aei.columns][::4]
+        except AttributeError:
+            self.sample_ids = [i[0] for i in self.aei.index][::4]
+        ids = (pd.Index(self.sample_ids)
+                .intersection(self.geno.columns))
         self.ids = ids
         self.maf = calculate_minor_allele_frequency(self.geno.ix[:, ids])
         self.gene_name = gene_name
@@ -92,8 +96,11 @@ class AEI(object):
         base_pair_to_index = {'A':0, 'C': 1, 'G': 2, 'T': 3}
         ids = self.ids
         # Focusing only on single-nucleotide polymorphisms
-        not_indel = [i for i in self.aei.index if\
-                len(self.snp_annot.ix[i, 'a1']) == 1]
+        if type(self.aei) == pd.DataFrame:
+            not_indel = [i for i in self.aei.index if\
+                    len(self.snp_annot.ix[i, 'a1']) == 1]
+        else:
+            not_indel = [self.aei.name]
         hets = dosage_round(self.geno.ix[not_indel, :])[ids]
         pvalues_out = np.ones((self.geno.shape[0], len(not_indel)),
             dtype=np.double)
@@ -128,10 +135,14 @@ class AEI(object):
             if len(hi) >= num_threshold:
                 refi = [(k, REF) for k in hi.index]
                 alti = [(k, ALT) for k in hi.index]
-                ref = np.asarray(self.aei.ix[j, refi].values,
-                        dtype=np.float64)
-                alt = np.asarray(self.aei.ix[j, alti].values, 
-                        dtype=np.float64)
+                try:
+                    ref = np.asarray(self.aei.ix[j, refi].values,
+                            dtype=np.float64)
+                    alt = np.asarray(self.aei.ix[j, alti].values, 
+                            dtype=np.float64)
+                except pd.core.indexing.IndexingError:
+                    ref = np.asarray(self.aei[refi].values, dtype=np.float64)
+                    alt = np.asarray(self.aei[alti].values, dtype=np.float64)
                 # THIS IS THE WRONG WAY TO MULTIINDEX (commented out below)
                 #print(self.aei.ix[ j, hi.index][0:20])
                 overall_counts.ix[i, :] = [np.nansum(ref), np.nansum(alt)]
@@ -141,13 +152,16 @@ class AEI(object):
                 allelic_ratio[allelic_ratio > 1] =\
                         1/allelic_ratio[allelic_ratio > 1]
                 outliers = (np.log2(allelic_ratio) < -3.5)
+                # Need to do something better for outliers
+                print('outliers')
+                print(outliers)
                 allelic_ratio = allelic_ratio[np.logical_not(outliers)]
                 if not single_snp:
                     geno_t = self.geno.ix[:, hi.index]
-                    geno_t = dosage_round(geno_t[np.logical_not(outliers)])
+                    geno_t = dosage_round(geno_t.ix[:, np.logical_not(outliers)])
                     pvalues_out.iloc[:,i] = (geno_t.
-                                       apply(single_snp_aei_test, axis=1, 
-                                       args=(outliers, allelic_ratio)))
+                                       apply(single_snp_aei_test2, axis=1, 
+                                       args=(allelic_ratio,)))
                 else:
                     geno_t = self.geno.ix[single_snp, hi.index]
                     geno_t = dosage_round(geno_t[np.logical_not(outliers)])
@@ -162,7 +176,9 @@ class AEI(object):
         self.sufficient_hets = sufficient_hets
         overall_counts['Nhets'] = sufficient_hets
         self.overall_counts = overall_counts
-        self.outliers = outliers
+        # This never actually gets used, but there is currently an error if you
+        # of the local variable being unbound
+        #self.outliers = outliers
         self.ratios = aei_ratios
         # Outliers need to be fixed only set on the most recent one atm
         
@@ -201,7 +217,7 @@ class AEI(object):
             ax.set_title('')
         ax.set_xlabel('Samples')
         ax.set_ylabel('$log_{2}$ Allelic Fraction')
-        width = 0.5
+        width = 1
         allelic_ratio = self.ratios.ix[self.hets_dict[tsnp], tsnp]
         allelic_ratio_i = np.argsort(allelic_ratio.values)
         allelic_ratio = np.log2(allelic_ratio.iloc[allelic_ratio_i])
@@ -219,7 +235,7 @@ class AEI(object):
         allelic_ratio = allelic_ratio[outliers]
         ind = np.arange(len(allelic_ratio))
         rects1 = ax.bar(ind, allelic_ratio, width, color = color_geno, 
-                linewidth=0)
+                linewidth=1)
         ax.set_xlim((-1, len(allelic_ratio+1)))
         ax = remove_tr_spines(ax)
         if ax: 
@@ -229,7 +245,7 @@ class AEI(object):
             return(fig)
 
 
-    def aei_plot_single(self, tsnp, ax=None):
+    def aei_plot_single(self, tsnp, ax=None, focus_snp=None):
         """
         Arguments
         ---------
@@ -247,8 +263,16 @@ class AEI(object):
                     sharey=False, sharex=True, 
                     subplot_kw=dict(axisbg='#FFFFFF'))
         adj_pvalue = -1*np.log10(self.pvalues.loc[:, tsnp])
+        if focus_snp:
+            snp = focus_snp
+        else:
+            # :TODO fix for both use cases
+            #snp = subset.iloc[np.nanargmax(adj_pv), 0]
+            snp = self.pvalues.index[np.nanargmax(adj_pvalue)]
+        color1 = calculate_ld(self.geno,
+            snp)[adj_pvalue.index].values
         scatter = ax.scatter(pos, 
-                        adj_pvalue, s=size_maf)
+                        adj_pvalue, s=size_maf, c=color1)
         ax.set_ylabel(r'-$log_{10}$ AEI p-value')
         ylim = (max(adj_pvalue) + max(adj_pvalue/6.0))
         ax.set_ylim((-0.01, ylim))

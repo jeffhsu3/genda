@@ -199,6 +199,7 @@ def plot_eQTL(meQTL, gene_name, annotation, dosage, ax=None,
     ax.xaxis.set_major_formatter(x_formatter)
     ### Actual scatter #############################
     im = ax.scatter(pos, adj_pv, s=dosage_maf, c = color1)
+    #:TODO make the arrow into a funciton
     arrow_start = ylim - max(adj_pv/6.0)/2
     arrow_length = max(adj_pv/6.0/2) - max(adj_pv/6.0/2)/8
     ax.arrow(snpx, arrow_start, 0, - arrow_length, 
