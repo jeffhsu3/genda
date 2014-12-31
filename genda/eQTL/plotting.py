@@ -179,6 +179,7 @@ def plot_eQTL(meQTL, gene_name, annotation, dosage, ax=None,
         iix = [i for i, j in enumerate(subset["SNP"]) if j == snp] 
     except KeyError:
         iix = [i for i, j in enumerate(subset.index) if j == snp]
+    # Need this since pos is a numpy array not pandas series
     snpx = pos[iix[0]] 
     snp_pv = adj_pv.iloc[iix[0]]
     color1 = calculate_ld(dosage_sub,
@@ -200,6 +201,7 @@ def plot_eQTL(meQTL, gene_name, annotation, dosage, ax=None,
     ### Actual scatter #############################
     im = ax.scatter(pos, adj_pv, s=dosage_maf, c = color1)
     #:TODO make the arrow into a funciton
+
     arrow_start = ylim - max(adj_pv/6.0)/2
     arrow_length = max(adj_pv/6.0/2) - max(adj_pv/6.0/2)/8
     ax.arrow(snpx, arrow_start, 0, - arrow_length, 

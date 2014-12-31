@@ -9,7 +9,8 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 from genda import calculate_minor_allele_frequency, calculate_ld
-from genda.plotting import should_not_plot, add_gene_bounderies
+from genda.plotting import (should_not_plot, add_gene_bounderies,
+        add_snp_arrow)
 from genda.eQTL import plot_eQTL
 
 
@@ -39,7 +40,10 @@ def single_snp_aei_test(geno, outliers, allelic_ratio, num_threshold=5):
 def single_snp_aei_test2(geno, allelic_ratio, num_threshold=5):
     het_combined = allelic_ratio[np.array(geno == 1)]
     homo_combined = allelic_ratio[np.array(np.logical_or(geno==0, geno==2))]
+    # Het_combined must have a higher ratio than homo_combined
     if len(het_combined) < num_threshold or len(homo_combined) < num_threshold:
+        return(1)
+    elif het_combined.mean() < homo_combined.mean():
         return(1)
     else:
         return(ttest_ind(het_combined, homo_combined, equal_var=False)[1])
@@ -144,7 +148,6 @@ class AEI(object):
                     ref = np.asarray(self.aei[refi].values, dtype=np.float64)
                     alt = np.asarray(self.aei[alti].values, dtype=np.float64)
                 # THIS IS THE WRONG WAY TO MULTIINDEX (commented out below)
-                #print(self.aei.ix[ j, hi.index][0:20])
                 overall_counts.ix[i, :] = [np.nansum(ref), np.nansum(alt)]
                 allelic_ratio = alt/ref
                 aei_ratios.ix[hi.index, i] = pd.Series(allelic_ratio, index=hi.index)
@@ -153,8 +156,6 @@ class AEI(object):
                         1/allelic_ratio[allelic_ratio > 1]
                 outliers = (np.log2(allelic_ratio) < -3.5)
                 # Need to do something better for outliers
-                print('outliers')
-                print(outliers)
                 allelic_ratio = allelic_ratio[np.logical_not(outliers)]
                 if not single_snp:
                     geno_t = self.geno.ix[:, hi.index]
@@ -249,8 +250,7 @@ class AEI(object):
         """
         Arguments
         ---------
-        tsnp - a particular tag snp to plot association with
-        """
+        tsnp - a particular tag snp to plot association with """
         x_scale = 1e6
         cm = plt.cm.get_cmap('Blues')
         size_maf = ((200 * self.maf) + 20)
@@ -269,6 +269,8 @@ class AEI(object):
             # :TODO fix for both use cases
             #snp = subset.iloc[np.nanargmax(adj_pv), 0]
             snp = self.pvalues.index[np.nanargmax(adj_pvalue)]
+        snp_iloc = [i for i, j in enumerate(adj_pvalue.index)\
+                if j == snp][0]
         color1 = calculate_ld(self.geno,
             snp)[adj_pvalue.index].values
         scatter = ax.scatter(pos, 
@@ -276,7 +278,7 @@ class AEI(object):
         ax.set_ylabel(r'-$log_{10}$ AEI p-value')
         ylim = (max(adj_pvalue) + max(adj_pvalue/6.0))
         ax.set_ylim((-0.01, ylim))
-        
+        ax = add_snp_arrow(adj_pvalue[snp], pos[snp_iloc], snp, ax)
         if ax:
             return(ax)
         else:
@@ -284,7 +286,8 @@ class AEI(object):
 
 
     def aei_plot(self, meQTL, snp_plot=None, n_sufficient_hets=50, 
-            common_only=False, mpld3plot=False, focus_snp=None, ax=None, **kwargs):
+            common_only=False, mpld3plot=False, 
+            focus_snp=None, ax=None, **kwargs):
         """
         Arguments
         ---------

@@ -75,3 +75,19 @@ def add_gene_bounderies(ax, gene_annot, gene_name, x_scale):
             0, 200)
     patch = patches.PathPatch(path_a, facecolor='grey', alpha=0.25)
     return(patch)
+
+
+
+def add_snp_arrow(adj_pv, x, snp, ax):
+    """Adds an arrow with snp text to plot 
+    The best snp should be some sort of object
+    """
+    print(type(ax.get_ylim()))
+    print(type(adj_pv))
+    arrow_start = ax.get_ylim()[1] - adj_pv/6.0/2
+    arrow_length = adj_pv/6.0/2 - adj_pv/6.0/2/8
+    ax.arrow(x, arrow_start, 0, -arrow_length, head_width=0.01,
+            head_length=0.1, fc='k', ec='k')
+    ax.text(x - 0.05, arrow_start + adj_pv/6.0/5.0,
+            snp, style='italic')
+    return(ax)
