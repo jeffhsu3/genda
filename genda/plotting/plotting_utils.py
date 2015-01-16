@@ -43,7 +43,7 @@ def make_rectangle(start, end, y1, y2):
 
 def plot_transcript(transcript_id, paths, ax, y=0, height=2., 
         full_gene=False):
-    """
+    """ Plot a transcript
     """
     xmin = None
     xmax = None
@@ -63,7 +63,9 @@ def plot_transcript(transcript_id, paths, ax, y=0, height=2.,
         ps.append(patches.PathPatch(i, facecolor='darkgray', lw=0))
     for patch in ps:
         ax.add_patch(patch)
-    ax.hlines(y+height/2., xmin, xmax, colors='darkgray', lw=2)
+    # hlines doesn't work without returning axis
+    draw_arrows(xmin, xmax, y+height/2.0, ax)
+    ax.hlines(y+height/2.0, xmin, xmax, colors='darkgray', lw=2)
 
 
 def add_gene_bounderies(ax, gene_annot, gene_name, x_scale):
@@ -80,7 +82,7 @@ def add_gene_bounderies(ax, gene_annot, gene_name, x_scale):
 
 def add_snp_arrow(adj_pv, x, snp, ax):
     """Adds an arrow with snp text to plot 
-    The best snp should be some sort of object
+    :TODO The best snp should be some sort of object
     """
     print(type(ax.get_ylim()))
     print(type(adj_pv))
@@ -91,3 +93,105 @@ def add_snp_arrow(adj_pv, x, snp, ax):
     ax.text(x - 0.05, arrow_start + adj_pv/6.0/5.0,
             snp, style='italic')
     return(ax)
+
+
+def plot_read2(read, y_start, height=1, ymax=30, scale=1e6):
+    """
+    """
+    gout = {'patches': [],
+            'hlines': [],
+            }
+    cont = 0
+    for i, j in read.cigar:
+        if i == 0:
+            path = make_rectangle(read.pos/scale + cont/scale,
+                    read.pos/scale + cont/scale + j/scale,
+                    ymax - y_start, 
+                    ymax - y_start - float(height))
+            patch = patches.PathPatch(path, facecolor='grey', 
+                    alpha = 0.4)
+            gout['patches'].append(patch)
+            cont += j
+        elif i == 3:
+            gout['hlines'].append((ymax-y_start - float(height)/2.0,
+                read.pos/scale + cont/scale, 
+                read.pos/scale + cont/scale + j/scale))
+    return(gout)
+
+
+
+def plot_read(read, y_start, ax, height=1, ymax=30, scale=1e6):
+    """ Plot a sequencing read
+
+    """
+    cont = 0
+    for i, j in read.cigar:
+        if i == 0:
+            path = make_rectangle(read.pos/scale + cont/scale,
+                    read.pos/scale + cont/scale + j/scale,
+                    ymax - y_start, 
+                    ymax - y_start - float(height))
+            patch = patches.PathPatch(path, facecolor='grey', 
+                    alpha = 0.4)
+            ax.add_patch(patch)
+            cont += j
+        elif i == 3:
+            ax.hlines(ymax - y_start - float(height)/2.0,
+                    read.pos/scale + cont/scale,
+                    read.pos/scale + cont/scale + j/scale, 
+                    colors='grey')
+            cont += j
+        
+
+def coverage_hist(read, hist_array, start):
+    ii = read.pos - start
+    cont = 0
+    for i, j in read.cigar:
+        if i == 0:
+            hist_array[ii + cont:ii+cont+j] +=1
+            cont += j
+        elif i==3:
+            pass
+
+
+def create_gene_path(gtf_iter, gene, x_scale):
+    """
+    Returns
+    -------
+    None
+    """
+    pass
+
+
+def draw_arrows(xmin, xmax, y, ax, spacing=0.001):
+    # :TODO make spacing dynamic based on axis limits 
+    x_range = np.arange(xmin, xmax, spacing)[1:-1]
+    for i in x_range:
+        draw_arrow(i, y, ax)
+
+
+def draw_arrow(x, y, ax):
+    # :TODO x_adjust and y_adjust scale based on axis limits
+    x_adjust = 0.0003
+    y_adjust = 0.05
+    ax.plot([x, x+x_adjust], [y, y+y_adjust], 'k-', color='darkgrey')
+    ax.plot([x, x+x_adjust], [y, y-y_adjust], 'k-', color='darkgrey')
+    
+
+def get_path_max_and_min(gene_dict):
+    """ Return min, max of a path
+    """
+    points = []
+    try:
+        for i in gene_dict.values():
+            for j in i:
+                for k in j.vertices:
+                    points.append(k[0])
+    except AttributeError:
+        # Case where only 1 transcript is chosen
+        for j in gene_dict:
+            for k in j.vertices:
+                points.append(k[0])
+    return(min(points), max(points))
+
+

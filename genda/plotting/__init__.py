@@ -11,7 +11,6 @@ import pysam
 from matplotlib.path import Path
 from genda.formats.dosages import grab_gene_location
 from .plotting_utils import *
-#from genda.plotting.plotting_utils import create_path
 
 
 def make_rectangle(start, end, y1, y2):
@@ -33,6 +32,8 @@ def make_rectangle(start, end, y1, y2):
 
 def create_path(gtf_iterator, gene, height=0.5, x_scale=1):
     """ Create a path for a given transcript
+
+    :TODO change name
     """
     transcripts = defaultdict(list)
     t_rxe = re.compile('transcript_id "(ENST[0-9]+)"')

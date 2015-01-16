@@ -201,14 +201,13 @@ def plot_eQTL(meQTL, gene_name, annotation, dosage, ax=None,
     ### Actual scatter #############################
     im = ax.scatter(pos, adj_pv, s=dosage_maf, c = color1)
     #:TODO make the arrow into a funciton
-
     arrow_start = ylim - max(adj_pv/6.0)/2
     arrow_length = max(adj_pv/6.0/2) - max(adj_pv/6.0/2)/8
     ax.arrow(snpx, arrow_start, 0, - arrow_length, 
             head_width=0.01, head_length=0.1, fc='k',
             ec='k')
     ax.text(snpx-0.05 , arrow_start + max(adj_pv/6.0)/5.0, 
-            snp, style='italic', fontsize=16)
+            snp, style='italic')
     ax.set_ylabel(r'$-log_{10}$ eQTL p-value')
     ax.set_xlabel(r'Position (Mb)')
     if should_not_plot(gene_annot):
