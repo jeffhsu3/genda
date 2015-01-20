@@ -4,7 +4,7 @@ ctypedef np.float64_t dtype_t
 ctypedef np.uint16_t DTYPE_t
 from genda.pysam_callbacks.allele_counter cimport AlleleCounter
 from cpython cimport bool
-from pysam.csamtools cimport Samfile, IteratorRowRegion, AlignedRead
+from pysam.calignmentfile cimport AlignmentFile, IteratorRowRegion, AlignedSegment
 import cython
 from cython.parallel import prange
 from . import *
@@ -22,7 +22,7 @@ cpdef aei_count_samples(np.ndarray[dtype_t, ndim=2] geno,
     """
     cdef int n_samples
     cdef int counter
-    cdef Samfile bamfile
+    cdef AlignmentFile bamfile
     cdef int n_markers
     cdef int j 
     cdef int i

@@ -240,7 +240,6 @@ def main():
         subset_geno.apply(counts_fixed)
     reget_fixed = functools.partial(reget_sample_names, mapping = file_to_sample)
     counts_matrix.rename(columns=file_to_sample, inplace=True)
-    print(counts_matrix)
 
     counts_matrix.to_pickle(options.filename)
 

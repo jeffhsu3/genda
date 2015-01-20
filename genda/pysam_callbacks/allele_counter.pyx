@@ -5,7 +5,7 @@ from cpython cimport bool
 #from multiprocessing import Process
 #import cython
 cimport pysam.csamtools as csam
-from pysam.csamtools cimport AlignedRead, bam1_t, bam_pileup1_t
+from pysam.calignmentfile cimport AlignedSegment
 from libc.stdlib cimport malloc, free
 from cpython cimport PyObject
 #cimport csamtools
@@ -15,13 +15,6 @@ ctypedef np.float64_t dtype_t
 
 cdef inline int int_max(int i , int j): return i if i >= j else j
 
-'''
-cpdef object construct_known_var(csam.Samfile samfile, PileupProxy col):
-    """ Counts the various alleles at a given position.
-    """
-
-    cdef int i # loop index
-'''
 
 cdef class AlleleCounter:
     """ Counts the various alleles at a given position.
@@ -52,12 +45,11 @@ cdef class AlleleCounter:
         self.region = region
         self.position = int(position)
         self.phredThreshold = phredThreshold
-        print('hi_c')
         #self.counts = np.zeros(4, dtype=np.uint16)
         
 
 
-    def  __call__(self, AlignedRead alignment, int position = 0,
+    def  __call__(self, AlignedSegment alignment, int position = 0,
                  int phredThreshold = 0,
                  bool isIndel = False):
         cdef int index
