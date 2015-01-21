@@ -4,8 +4,15 @@
 Running Aellic Expression Imbalance
 *********************
 
-Running aellic expression imbalance analysis on RNA-Sequencing data.  Returns 
-a pandas dataframe pickled to a file specified by OUTPUT.
+Running aellic expression imbalance analysis on RNA-Sequencing data.  Counts the 
+alleles in the specified bam files from 'file_to_sample_mapping.txt' at
+locations specified in the genotype file.  The script returns 
+a pandas dataframe pickled to a file specified by OUTPUT.  The columns of
+the aei dataframe is a multi-index with the first index being the sample
+id and the second index composing of base pairs in the order as specificed:
+[A, G, C, T].
+
+:TODO Need to handle indels at tag SNPs.
 
 .. code-block
     python genda_path/scripts/aei_count.py genotype_data file_to_sample_mapping.txt -o OUTPUT

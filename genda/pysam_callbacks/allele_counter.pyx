@@ -18,12 +18,11 @@ cdef inline int int_max(int i , int j): return i if i >= j else j
 
 cdef class AlleleCounter:
     """ Counts the various alleles at a given position.
-
     usage:
     import pysam
     t = AlleleCounter(c_m, "chr1", snp-position - 1)
     bamfile.fetch("chr1", 124415155, 124415156, callback=t)
-    t.counts = [A counts, C counts, G counts, T counts]
+    print(t.A_n/float(t.G_n))  
 
     :TODO refactor out callback
     """

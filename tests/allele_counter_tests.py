@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 
 from genda.pysam_callbacks.allele_counter import AlleleCounter
-from pysam.csamtools import AlignedRead
+from pysam.calignmentfile import AlignedSegment
 
 def make_read(aligned_read, pos, cigar):
     aligned_read.pos = pos
@@ -11,7 +11,7 @@ def make_read(aligned_read, pos, cigar):
     return aligned_read
 
 
-class FakeAlignment(AlignedRead):
+class FakeAlignment(AlignedSegment):
     """ Simulating sequencing reads
     """
 
@@ -30,7 +30,7 @@ class testCounter(unittest.TestCase):
     def setUp(self):
         # Read positions in BAM are zero-indexed while SNP positions are almost
         # always 1-indexed
-        self.read = AlignedRead()
+        self.read = AlignedSegment()
         self.read.seq = "ATTAGGATAG" 
         self.mapq = 255
         self.qual = len(self.read.seq) * 'I'
@@ -40,19 +40,27 @@ class testCounter(unittest.TestCase):
         regular_read = make_read(self.read, 24, [(0,10)])
         test = AlleleCounter("chr1", 29)
         test(regular_read)
-        np.testing.assert_equal(test.counts, np.asarray([0,0,1,0]))
+        print(test.counts)
+        np.testing.assert_equal(
+                np.asarray([test.A_n, test.G_n, 
+            test.G_n, test.T_n]), 
+                np.asarray([0,0,1,0]))
 
     def testSNPinIntron(self):
         snp_in_intron = make_read(self.read, 24, [(0,5), (3,5), (0,5)])
         test = AlleleCounter("chr1", 31)
         test(snp_in_intron)
-        np.testing.assert_equal(test.counts, np.asarray([0,0,0,0]))
+        t = np.asarray([test.A_n, test.G_n, 
+            test.G_n, test.T_n])
+        np.testing.assert_equal(t, np.asarray([0,0,0,0]))
 
     def testSecondExon(self):
         snp_in_second_exon = make_read(self.read, 24, [(0,5),(3,5),(0,5)])
         test = AlleleCounter("chr1", 37)
         test(snp_in_second_exon)
-        np.testing.assert_equal(test.counts, np.asarray([0,0,0,1]))
+        t = np.asarray([test.A_n, test.G_n, 
+            test.G_n, test.T_n])
+        np.testing.assert_equal(t, np.asarray([0,0,0,1]))
 
     """
     Not yet implemented

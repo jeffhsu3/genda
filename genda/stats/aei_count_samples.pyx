@@ -11,8 +11,6 @@ from . import *
 
 STUFF = 'hi'
 
-# Not correctly implemented yet
-
 @cython.boundscheck(False)
 cpdef aei_count_samples(np.ndarray[dtype_t, ndim=2] geno,
         np.ndarray geno_columns,
