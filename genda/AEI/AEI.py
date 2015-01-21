@@ -89,13 +89,17 @@ class AEI(object):
         # :TODO Need to merge aei ids into here
 
 
-    def calc_aei(self, num_threshold=5, single_snp=None):
+    def calc_aei(self, num_threshold=5, count_threshold = 30, 
+            single_snp=None):
         """
         Arguments
         ---------
         eQTL - eQTL pvalues
-        num_threshold - threshold of heterozygous samples before
+        num_threshold - threshold of heterozygous samples at the tag SNP
+        required
         single_snp - calculate the pvalue at just a single SNP
+        count_threshold - number counts at the tag SNP within an 
+        individual before that individual will be used in the fit
         """
         base_pair_to_index = {'A':0, 'C': 1, 'G': 2, 'T': 3}
         ids = self.ids
@@ -116,6 +120,11 @@ class AEI(object):
         overall_counts = pd.DataFrame(
                 np.zeros((len(not_indel), 2), dtype=np.uint32), 
                 index=pd.Index(not_indel))
+        # 1 = False.  True for outliers_m means not outliers
+        outliers_m = pd.DataFrame(np.ones(m_size,
+                dtype=bool),
+                index=pd.Index(ids), 
+                columns=pd.Index(not_indel))
         # sufficient hets is really het counts
         sufficient_hets = pd.Series(
                 data=np.repeat(0, len(not_indel)), 
@@ -136,6 +145,7 @@ class AEI(object):
             hi = hi[np.logical_and(hi == 1.0, 
                                     np.logical_not(pd.isnull(hi)))]
             sufficient_hets[j] = len(hi)
+            # Need to filter based on individuals counts
             if len(hi) >= num_threshold:
                 refi = [(k, REF) for k in hi.index]
                 alti = [(k, ALT) for k in hi.index]
@@ -145,17 +155,23 @@ class AEI(object):
                     alt = np.asarray(self.aei.ix[j, alti].values, 
                             dtype=np.float64)
                 except pd.core.indexing.IndexingError:
+                    # For cases where self.aei is a single row or series
                     ref = np.asarray(self.aei[refi].values, dtype=np.float64)
                     alt = np.asarray(self.aei[alti].values, dtype=np.float64)
-                # THIS IS THE WRONG WAY TO MULTIINDEX (commented out below)
+                # Filter on counts
+                s = ref + alt
+                s = s >= count_threshold 
                 overall_counts.ix[i, :] = [np.nansum(ref), np.nansum(alt)]
                 allelic_ratio = alt/ref
-                aei_ratios.ix[hi.index, i] = pd.Series(allelic_ratio, index=hi.index)
+                aei_ratios.ix[hi.index, i] = pd.Series(allelic_ratio,
+                        index=hi.index)
                 # Flip the ratio
                 allelic_ratio[allelic_ratio > 1] =\
                         1/allelic_ratio[allelic_ratio > 1]
-                outliers = (np.log2(allelic_ratio) < -3.5)
                 # Need to do something better for outliers
+                outliers = (np.log2(allelic_ratio) < -3.5)
+                outliers = np.logical_and(outliers, s)
+                outliers_m.ix[hi.index, i] = outliers
                 allelic_ratio = allelic_ratio[np.logical_not(outliers)]
                 if not single_snp:
                     geno_t = self.geno.ix[:, hi.index]
@@ -179,7 +195,7 @@ class AEI(object):
         self.overall_counts = overall_counts
         # This never actually gets used, but there is currently an error if you
         # of the local variable being unbound
-        #self.outliers = outliers
+        self.outliers = outliers_m
         self.ratios = aei_ratios
         # Outliers need to be fixed only set on the most recent one atm
         
@@ -246,6 +262,14 @@ class AEI(object):
             return(fig)
 
 
+    def aei_within_individual(self, ax=None):
+        ''' A hidden Markov attempt at determining AEI within
+        a transcript
+        '''
+        self.aei
+
+
+
     def aei_plot_single(self, tsnp, ax=None, focus_snp=None):
         """
         Arguments
@@ -264,11 +288,13 @@ class AEI(object):
                     subplot_kw=dict(axisbg='#FFFFFF'))
         adj_pvalue = -1*np.log10(self.pvalues.loc[:, tsnp])
         if focus_snp:
+            print('focus snp')
             snp = focus_snp
         else:
             # :TODO fix for both use cases
             #snp = subset.iloc[np.nanargmax(adj_pv), 0]
             snp = self.pvalues.index[np.nanargmax(adj_pvalue)]
+        print(snp)
         snp_iloc = [i for i, j in enumerate(adj_pvalue.index)\
                 if j == snp][0]
         color1 = calculate_ld(self.geno,
@@ -278,7 +304,7 @@ class AEI(object):
         ax.set_ylabel(r'-$log_{10}$ AEI p-value')
         ylim = (max(adj_pvalue) + max(adj_pvalue/6.0))
         ax.set_ylim((-0.01, ylim))
-        ax = add_snp_arrow(adj_pvalue[snp], pos[snp_iloc], snp, ax)
+        ax = add_snp_arrow(adj_pvalue[snp_iloc], pos[snp_iloc], snp, ax)
         if ax:
             return(ax)
         else:

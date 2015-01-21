@@ -66,7 +66,8 @@ def get_dosages_by_range(chrm, start, end, gene_name, annotation_file,
 
 
 def grab_gene_location(hgnc, cis_buffer=0, ensid = False):
-    """
+    """ :TODO maybe query ensembl for this
+    :TODO ensid matching
     """
     ann_file = "/proj/genetics/Projects/shared/Subject_Sources/" +\
             "External/Ensembl/OutputData/EnsemblAnnotationAllHumanGenes.bed.gz"

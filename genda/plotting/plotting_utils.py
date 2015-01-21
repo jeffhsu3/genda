@@ -48,6 +48,7 @@ def plot_transcript(transcript_id, paths, ax, y=0, height=2.,
     xmin = None
     xmax = None
     ps = []
+    ymin, ymax = ax.get_ylim()
     for i in paths[transcript_id]:
         i.vertices[:, 1] = np.asarray([y, y + height, y + height, y, y])
         if not xmin or not xmax:
@@ -63,9 +64,10 @@ def plot_transcript(transcript_id, paths, ax, y=0, height=2.,
         ps.append(patches.PathPatch(i, facecolor='darkgray', lw=0))
     for patch in ps:
         ax.add_patch(patch)
-    # hlines doesn't work without returning axis
+    # hlines doesn't in this function but outside it?
     draw_arrows(xmin, xmax, y+height/2.0, ax)
     ax.hlines(y+height/2.0, xmin, xmax, colors='darkgray', lw=2)
+    return(ax)
 
 
 def add_gene_bounderies(ax, gene_annot, gene_name, x_scale):
@@ -195,3 +197,6 @@ def get_path_max_and_min(gene_dict):
     return(min(points), max(points))
 
 
+class read_plots(object):
+    def __init__(self):
+        pass
