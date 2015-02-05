@@ -25,7 +25,7 @@ def remove_tr_spines(ax):
     return(ax)
 
 
-def single_snp_aei_test(geno, outliers, allelic_ratio, num_threshold=5):
+def single_snp_aei_test(geno, outliers, allelic_ratio, num_threshold=2):
     """
     """
     geno = geno[np.logical_not(outliers)]
@@ -37,14 +37,13 @@ def single_snp_aei_test(geno, outliers, allelic_ratio, num_threshold=5):
         return(ttest_ind(het_combined, homo_combined, equal_var=False)[1])
 
 
-def single_snp_aei_test2(geno, allelic_ratio, num_threshold=5):
+def single_snp_aei_test2(geno, allelic_ratio, num_threshold=2):
     het_combined = allelic_ratio[np.array(geno == 1)]
     homo_combined = allelic_ratio[np.array(np.logical_or(geno==0, geno==2))]
     # Het_combined must have a higher ratio than homo_combined
     if len(het_combined) < num_threshold or len(homo_combined) < num_threshold:
         return(1)
-    elif het_combined.mean() < homo_combined.mean():
-        return(1)
+    #elif het_combined.mean() < homo_combined.mean():return(1)
     else:
         return(ttest_ind(het_combined, homo_combined, equal_var=False)[1])
 
@@ -165,17 +164,21 @@ class AEI(object):
                 allelic_ratio = alt/ref
                 aei_ratios.ix[hi.index, i] = pd.Series(allelic_ratio,
                         index=hi.index)
+                allelic_ratio = pd.Series(allelic_ratio,
+                        index=hi.index)
+
                 # Flip the ratio
                 allelic_ratio[allelic_ratio > 1] =\
                         1/allelic_ratio[allelic_ratio > 1]
                 # Need to do something better for outliers
-                outliers = (np.log2(allelic_ratio) < -3.5)
+                outliers = (np.log2(allelic_ratio) < -3.5) &\
+                        np.logical_not(np.isinf(allelic_ratio))
                 outliers = np.logical_and(outliers, s)
                 outliers_m.ix[hi.index, i] = outliers
                 allelic_ratio = allelic_ratio[np.logical_not(outliers)]
                 if not single_snp:
-                    geno_t = self.geno.ix[:, hi.index]
-                    geno_t = dosage_round(geno_t.ix[:, np.logical_not(outliers)])
+                    geno_t = self.geno.ix[:, allelic_ratio.index]
+                    geno_t = dosage_round(geno_t)
                     pvalues_out.iloc[:,i] = (geno_t.
                                        apply(single_snp_aei_test2, axis=1, 
                                        args=(allelic_ratio,)))

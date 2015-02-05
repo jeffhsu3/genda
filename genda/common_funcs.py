@@ -5,6 +5,8 @@ from scipy.stats import pearsonr
 
 def calculate_minor_allele_frequency(genotypes):
     """
+    Returns a dataframe of the allele frequencies
+
     Parameters
     ----------
     genotypes : a genotype dataframe with polymorphisms going row-wise
@@ -53,6 +55,7 @@ def regionParse(string):
     except ValueError:
         sys.exit()
     return(string[0:string.find(':')] , start, end)
+
 
 if __name__ =="__main__":
     import doctest
