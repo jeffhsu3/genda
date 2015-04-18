@@ -65,25 +65,25 @@ cdef class AlleleCounter:
         position = self.position
         #qualT = self.phredThreshold
         #print(alignment.seq)
-        
-        #if alignment.is_duplicate:
         if False:
             pass
         else:
             inserts = 0
             i_e = alignment.pos
             i_s = alignment.pos
-
-            for i in alignment.cigar:
+            for i in alignment.cigartuples:
                 # 0 is cigar string match
                 inserts += i[0] * 1/3 * i[1]
                 i_e += i[1]  
                 if i_s <= position < i_e and i[0] == 3:
                     break
                 elif i_s <= position < i_e:
-                    index = position - inserts - alignment.pos - 1 
+                    try:
+                        index = position - inserts - alignment.pos - 1 
+                        base_pair = alignment.seq[index]
+                    except IndexError:
+                        continue
                     # :TODO INDELS!
-                    base_pair = alignment.seq[index]
                     if base_pair == b'A' or base_pair == b'a':
                         self.A_n += 1
                     elif base_pair == b'C' or base_pair == b'c':

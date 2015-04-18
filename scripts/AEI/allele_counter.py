@@ -31,9 +31,12 @@ import numpy as np
 import pandas as pd
 
 
+from IPython import embed
+
 from genda.formats.panVCF import VCF
 import genda.stats.likelihood_funcs as lf
 from genda.pysam_callbacks.allele_counter import AlleleCounter
+from genda.stats.aei_count_samples import aei_count_samples
 
 def threshold_counts(counts, threshold=30, number=1):
     """ Returns True
@@ -54,37 +57,6 @@ def column_names_to_bams(colname):
     return colname + ".bam"
 
 
-def counts_for_individuals(sample_genotype, reduced=False, c_m=None, 
-                           chrm=None, pos=None, path=None,
-                           bamfile_func = column_names_to_bams):
-    """ Given a genotype, only run AEI on the known heterozygotes
-    """
-    # Restrict to heterozygotes
-    if reduced:
-        reduced_chrm = chrm[sample_genotype == 1]
-        reduced_pos = pos[sample_genotype == 1]
-        reduced_index = sample_genotype.index[sample_genotype == 1]
-    else:
-        reduced_chrm = chrm
-        reduced_pos = pos
-        reduced_index = sample_genotype.index
-    bamfile = pysam.Samfile(sample_genotype.name, 'rb')
-    print(sample_genotype.name)
-    for i, j, k in zip(reduced_chrm, reduced_pos, reduced_index):
-        variant = AlleleCounter(str(i), j,
-                                   phredThreshold=0)
-        bamfile.fetch(variant.region, variant.position,
-                        variant.position + 1, callback=variant)
-        #print(variant.counts + 1, variant_2.counts)
-        #print(variant.counts.T)
-        #print(k)
-        #print(c_m.columns[0:4])
-        c_m.ix[k, [(sample_genotype.name, 0), 
-            (sample_genotype.name, 1), 
-            (sample_genotype.name, 2), 
-            (sample_genotype.name, 3),]] = variant.counts.T
-
-
 def reget_sample_names(x, mapping=None):
     """
     """
@@ -99,7 +71,6 @@ def main():
     Imbalance
 
     """
-
 
     #################################################################
     # Argument and Options Parsing
@@ -130,6 +101,7 @@ def main():
                  single sample in each file")
     p.add_option("-R", "--reduced", action="store_true", dest="reduced",
                  default=False)
+    print('Hello')
 
     options, args = p.parse_args()
     if options.qual: pass
@@ -145,7 +117,6 @@ def main():
     # For testing purposes
     debug = 1
     output = open(options.filename, 'wb')
-    print(options)
     if options.inputisvcffile:
         vcf = VCF(args[0])
         chrm = vcf.vcf['#CHROM']
@@ -153,15 +124,25 @@ def main():
         #geno = vcf.geno
         geno = pd.DataFrame(np.zeros((len(pos), len(sample_to_file))), 
                 columns = pd.Index(sample_to_file.keys()))
+
+    # :TODO fix different annotation options
     elif options.G:
         pass
     elif options.annot:
+        chrom = 18
         print('Right annotation file')
         rsIDs = []
         pos = []
         file_a = pysam.Tabixfile(options.annot)
+        # :TODO fix this
+        # Currently counts at all SNPs
         a_iter = file_a.fetch('18')
         chrm = []
+        '''
+        base_path = '/proj/GenomicsHD/Atrial_RNASeq/'
+        s_ann = pd.read_pickle(base_path + 'ref/snp_annot/' + str(chrom) +\
+                '.pkl')
+        '''
         debug = 0
         for i in a_iter:
             i = i.split("\t")
@@ -176,9 +157,15 @@ def main():
                 '''
         geno = pd.DataFrame(np.zeros((len(rsIDs), len(sample_to_file))), 
             index=pd.Index(rsIDs), columns = pd.Index(sample_to_file.keys()))
+        #print(s_ann.head())
+        pos = np.asarray(pos, dtype=np.uint32)
+        chrm = np.asarray(chrm)
         print('Chrom length')
         print(len(chrm))
+        print(len(pos))
+        print(pos[-1])
     else:
+        # grabbin at only a small subset of the genes
         vcf = pd.read_csv(args[0], sep=" ")
         # Read in annotation file
         try:
@@ -206,9 +193,7 @@ def main():
             pos = np.array(pos)
             geno = vcf
 
-
     # A tab delimited file mapping sample names to bams ############# 
-
     INDEX_BASE = ['A', 'C', 'G', 'T']
     if options.c:
         count_threshold = options.c
@@ -228,20 +213,13 @@ def main():
     multi_index = pd.MultiIndex.from_tuples(multi, names=['sample', 'alleles'])
     counts_matrix = pd.DataFrame(np.zeros((subset_geno.shape[0], 
                                            len(subset_geno.columns)*4), 
-                                           dtype=np.int16),
+                                           dtype=np.uint32),
                                  index=subset_geno.index, columns=multi_index)
 
-    counts_fixed = functools.partial(counts_for_individuals,
-            reduced=options.reduced, c_m=counts_matrix,
-                                     chrm=chrm, pos=pos)
-    try:
-        subset_geno.apply(counts_fixed, axis=0)
-    except ValueError:
-        subset_geno.apply(counts_fixed)
-    reget_fixed = functools.partial(reget_sample_names, mapping = file_to_sample)
-    counts_matrix.rename(columns=file_to_sample, inplace=True)
-
-    counts_matrix.to_pickle(options.filename)
+    c_m = aei_count_samples(subset_geno.values, subset_geno.columns.values,
+            counts_matrix.values, np.asarray(chrm), pos)
+    c_m = pd.DataFrame(c_m, index=subset_geno.index, columns=multi_index)
+    c_m.to_pickle(options.filename)
 
 if __name__ == '__main__':
     main()
