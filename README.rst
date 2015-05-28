@@ -17,7 +17,7 @@ Installation
 
 Allelic Expression Imbalance
 ============================
-![AEI](doc/source/images/example_aei.png)
+[AEI!](doc/source/images/example_aei.png)
 
 
 Documentation

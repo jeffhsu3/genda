@@ -51,6 +51,14 @@ def single_snp_aei_test2(geno, allelic_ratio, num_threshold=2):
         return(ttest_ind(het_combined, homo_combined, equal_var=False)[1])
 
 
+
+
+def single_snp_aei_test_mixture_model(geno, allelic_ration, num_threshold=2):
+
+    pass
+
+
+
 def dosage_round(geno, threshold = 0.5):
     """ Rounds dosage to threshold
     """
