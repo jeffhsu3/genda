@@ -34,14 +34,16 @@ class SNP_array(Genotype.Genotype):
     -------
     Genotype.Genotype
     """
-    def __init__(self, zipfile, file_format = 'one column', delim = ',', samp_col = None, encoding = None, header_lines = 0,
+    def __init__(self, zipfile, file_format = 'one column', 
+            delim = ',', samp_col = None, encoding = None, header_lines = 0,
             startatline = 0, readnrows = None):
         
         try:
-            self.df = pd.read_csv(gzip.GzipFile(zipfile), delimiter = delim, header = header_lines,\
+            self.df = pd.read_csv(gzip.GzipFile(zipfile), 
+                    delimiter = delim, header = header_lines,
                     skiprows = startatline-1, nrows = readnrows)
+        # :TODO change exception
         except:
-            # :TODO change exception
             self.df = pd.read_csv(zipfile, delimiter = delim, header = header_lines, skiprows = startatline-1, nrows = readnrows)
 
 
@@ -90,12 +92,15 @@ class SNP_array(Genotype.Genotype):
 
     def apply_encoder(self, encoder):
         """
-        To apply the encoder to the SNP_array object after the fact if one was sot supplied with creation
+        To apply the encoder to the SNP_array object after the fact if one was sot 
+        supplied with creation
         """
         if self.filetype == 'one column':
-            return self.df.ix[:,self.samp_col:].apply(_single_column_allele, encoder = encoder, axis = 1)
+            return self.df.ix[:,self.samp_col:].apply(_single_column_allele, 
+                    encoder = encoder, axis = 1)
         elif self.filetype == 'two column':
-            return self.df.ix[:,self.samp_col:].apply(_two_columns_per_individual_coversion, encoder = encoder, axis = 1)
+            return self.df.ix[:,self.samp_col:].apply(_two_columns_per_individual_coversion, 
+                    encoder = encoder, axis = 1)
         else:
             return None
 
@@ -152,8 +157,9 @@ def create_encoding_dict(allele1, allele2, no_ambig=True):
 
 
 def _single_column_allele(genotype_array, encoder):
-    """ Converts dataframes containing values the format described below into a integer dataframe. The first
-    element in genotype_array should be the encoding.
+    """ Converts dataframes containing values the format described 
+    below into a integer dataframe. The first element in 
+    genotype_array should be the encoding.
 
     eg:  Ind01    Inde02
           AA       AG
