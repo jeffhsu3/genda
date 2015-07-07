@@ -32,7 +32,7 @@ def calculate_ld(genotypes, snp):
     A vector of linkage disequilibrium 
 
     """
-    ld = genotypes.apply(lambda x: pearsonr(genotypes.ix[snp, :], x)[0], axis=1)
+    ld = genotypes.corrwith( genotypes.ix[snp, :], axis=1)
     ld[np.isnan(ld.values)] = 0
     ld = np.sqrt(ld ** 2)
     return(ld)

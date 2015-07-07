@@ -12,6 +12,8 @@ from statsmodels.graphics.regressionplots import abline_plot
 from genda.plotting import should_not_plot, add_gene_bounderies
 from genda import calculate_minor_allele_frequency, calculate_ld
 
+from IPython import embed
+
 
 def var_boxplot(ax, x, colors=None):
     """
@@ -162,13 +164,12 @@ def plot_eQTL(meQTL, gene_name, annotation, dosage, ax=None,
         pos = np.asarray(annotation.ix[subset.index, 1], 
                 dtype=np.double)/x_scale
     dosage_sub = dosage.ix[subset.index,:]
+    print('subset shape')
+    print(subset.shape)
 
-    if should_not_plot(dosage):
-        dosage_maf =\
-                calculate_minor_allele_frequency(dosage_sub)
-        dosage_maf = ((150 * dosage_maf) + 20)
-    else:
-        dosage_maf = np.repeat(1, subset.shape[0])
+    dosage_maf =\
+            calculate_minor_allele_frequency(dosage_sub)
+    dosage_maf = ((150 * dosage_maf) + 20)
     if focus_snp:
         snp = focus_snp
     else:
@@ -184,6 +185,8 @@ def plot_eQTL(meQTL, gene_name, annotation, dosage, ax=None,
     snp_pv = adj_pv.iloc[iix[0]]
     color1 = calculate_ld(dosage_sub,
             snp)[dosage_sub.index].values
+    print(snp)
+    print(color1[0:5])
     if ax is None:
         ax_orig = False 
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(16, 6), 
@@ -211,9 +214,12 @@ def plot_eQTL(meQTL, gene_name, annotation, dosage, ax=None,
     ax.set_ylabel(r'$-log_{10}$ eQTL p-value')
     ax.set_xlabel(r'Position (Mb)')
     if should_not_plot(gene_annot):
+        pass
+        '''
         patch = add_gene_bounderies(ax, gene_annot, 
                 gene_name, x_scale)
         ax.add_patch(patch)
+        '''
     else: pass
     if symbol:
         gene_name = symbol
