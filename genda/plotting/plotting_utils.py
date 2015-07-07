@@ -65,8 +65,8 @@ def plot_transcript(transcript_id, paths, ax, y=0, height=2.,
     for patch in ps:
         ax.add_patch(patch)
     # hlines doesn't in this function but outside it?
-    draw_arrows(xmin, xmax, y+height/2.0, ax)
-    ax.hlines(y+height/2.0, xmin, xmax, colors='darkgray', lw=2)
+    #draw_arrows(xmin, xmax, y+height/2.0, ax)
+    #ax.hlines(y+height/2.0, xmin, xmax, colors='darkgray', lw=2)
     return(ax)
 
 

@@ -4,13 +4,15 @@ import numpy as np
 from scipy.stats import ttest_ind
 from textwrap import wrap
 
+from collections import defaultdict
+
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 from genda import calculate_minor_allele_frequency, calculate_ld
 from genda.plotting import (should_not_plot, add_gene_bounderies,
-        add_snp_arrow)
+        add_snp_arrow, plot_transcript)
 from genda.eQTL import plot_eQTL
 
 
@@ -43,9 +45,18 @@ def single_snp_aei_test2(geno, allelic_ratio, num_threshold=2):
     # Het_combined must have a higher ratio than homo_combined
     if len(het_combined) < num_threshold or len(homo_combined) < num_threshold:
         return(1)
-    #elif het_combined.mean() < homo_combined.mean():return(1)
+    elif (het_combined.mean() > homo_combined.mean()):
+        return(1)
     else:
         return(ttest_ind(het_combined, homo_combined, equal_var=False)[1])
+
+
+
+
+def single_snp_aei_test_mixture_model(geno, allelic_ration, num_threshold=2):
+
+    pass
+
 
 
 def dosage_round(geno, threshold = 0.5):
@@ -58,7 +69,8 @@ def dosage_round(geno, threshold = 0.5):
 
 
 class AEI(object):
-    def __init__(self, aei_dataframe, geno, snp_annot, gene_name):
+    def __init__(self, aei_dataframe, geno, snp_annot, gene_name,
+            maf_threshold = 0.05):
         """ 
         Arguments
         ---------
@@ -70,27 +82,48 @@ class AEI(object):
         snp_annot - dataframe of SNP annotations
         """
         self.aei = aei_dataframe
-        self.geno = geno
-        # :TODO calculate MAF of the snps in self.geno
         # :TODO assert self.geno and self.snp_annot are same shape
-        self.snp_annot = snp_annot
         try:
             self.sample_ids = [i[0] for i in self.aei.columns][::4]
         except AttributeError:
             self.sample_ids = [i[0] for i in self.aei.index][::4]
+
+
         ids = (pd.Index(self.sample_ids)
-                .intersection(self.geno.columns))
-        self.ids = ids
+                .intersection(geno.columns))
+        idx = pd.IndexSlice
+        try:
+            self.aei.sort_index(axis=1, inplace=True)
+            self.aei = self.aei.loc[:, idx[ids, :]]
+            self.aei.sort_index(axis=1, inplace=True)
+            self.geno = geno.ix[:, 
+                    self.aei.columns.get_level_values(0)[::4]]
+        except TypeError:
+            # Case where aei_dataframe is just a series
+            self.aei = self.aei.sort_index()
+            self.aei = self.aei.loc[idx[ids, :]]
+            self.aei = self.aei.sort_index()
+            self.geno = geno.ix[:,
+                    self.aei.index.get_level_values(0)[::4]]
+        self.ids = self.geno.columns
         self.maf = calculate_minor_allele_frequency(self.geno.ix[:, ids])
+        # Restrict to  > 5%
+        self.geno = self.geno.ix[(self.maf >= maf_threshold) &\
+                (self.maf <= 1 - maf_threshold), :]
+        self.snp_annot = snp_annot.ix[self.geno.index, :]
+        self.maf = self.maf[self.geno.index]
         self.gene_name = gene_name
+        self.aei = self.aei.ix[self.geno.index.intersection(self.aei.index),:]
         # SNPs of interest
         #self.ld = calculate_ld(self.geno.ix[:,0], snps_interest) 
         # :TODO Need to merge aei ids into here
 
 
     def calc_aei(self, num_threshold=5, count_threshold = 30, 
-            single_snp=None):
+            single_snp=None, outlier_thresh=-4.32):
         """
+        :TODO split this up into two functions 1 for series and one for
+        dataframe
         Arguments
         ---------
         eQTL - eQTL pvalues
@@ -102,19 +135,19 @@ class AEI(object):
         """
         base_pair_to_index = {'A':0, 'C': 1, 'G': 2, 'T': 3}
         ids = self.ids
-        # Focusing only on single-nucleotide polymorphisms
+        # Focusing only on single-nucleotide polymorphisms as indicator
         if type(self.aei) == pd.DataFrame:
             not_indel = [i for i in self.aei.index if\
-                    len(self.snp_annot.ix[i, 'a1']) == 1]
+                    (len(self.snp_annot.ix[i, 'a1']) == 1)\
+                     & len(self.snp_annot.ix[i, 'a0']) == 1]
         else:
             not_indel = [self.aei.name]
-        hets = dosage_round(self.geno.ix[not_indel, :])[ids]
-        pvalues_out = np.ones((self.geno.shape[0], len(not_indel)),
-            dtype=np.double)
+        geno_t = dosage_round(self.geno)
+        hets = geno_t.ix[not_indel, :]
         m_size = (len(ids), len(not_indel))
         aei_ratios = pd.DataFrame(
                 np.zeros(m_size, dtype=np.uint32),
-                index=pd.Index(ids), 
+                index=self.geno.columns, 
                 columns=pd.Index(not_indel))
         overall_counts = pd.DataFrame(
                 np.zeros((len(not_indel), 2), dtype=np.uint32), 
@@ -122,7 +155,7 @@ class AEI(object):
         # 1 = False.  True for outliers_m means not outliers
         outliers_m = pd.DataFrame(np.ones(m_size,
                 dtype=bool),
-                index=pd.Index(ids), 
+                index=self.geno.columns, 
                 columns=pd.Index(not_indel))
         # sufficient hets is really het counts
         sufficient_hets = pd.Series(
@@ -130,79 +163,70 @@ class AEI(object):
                 index=pd.Index(not_indel),
                 dtype=np.int32)
         hets_dict = {}
+
+        #REF = [base_pair_to_index[i] for i in self.snp_annot.ix[not_indel, 'a0']]
+        #ALT = [base_pair_to_index[i] for i in self.snp_annot.ix[not_indel, 'a1']]
+        def _run_df(hetr):
+            #hi = hetr[(hetr == 1.0) &  np.logical_not(pd.isnull(hetr))] 
+            return((hetr == 1.0) &  np.logical_not(pd.isnull(hetr)))
+
+        #:TODO deal with aei being class series
+
+        hets = hets.apply(_run_df, axis=1)
+        #print(hets)
+        sufficient_hets = hets.sum(axis=1)
+        hets = hets.ix[sufficient_hets >= num_threshold, :]
+        aei_t = self.aei.ix[hets.index,:]
+        #self.aei.apply(calc_pvalues, axis=1, args=(hets))
+        pvalues_out = np.ones((self.geno.shape[0], aei_t.shape[0]),
+            dtype=np.double)
         pvalues_out = pd.DataFrame(pvalues_out, index=self.geno.index,
-                columns=pd.Index(not_indel))
-        # :TODO make this into a function
-        for i, j in enumerate(not_indel):
+                columns=aei_t.index)
+        aei_ratios = pd.DataFrame(
+                np.zeros((len(ids), len(aei_t.index)), dtype=np.uint32),
+                index=self.geno.columns, 
+                columns=aei_t.index)
+
+        c = 0
+
+        for i, row in hets.iterrows():
             try:
-                REF = base_pair_to_index[self.snp_annot.ix[j, 'a0']]
-                ALT = base_pair_to_index[self.snp_annot.ix[j, 'a1']]
+                REF = base_pair_to_index[self.snp_annot.ix[i, 'a0']]
+                ALT = base_pair_to_index[self.snp_annot.ix[i, 'a1']]
             except KeyError:
                 continue
-            #  hi = hets for the current snp
-            hi = hets.ix[i,:]
-            hi = hi[np.logical_and(hi == 1.0, 
-                                    np.logical_not(pd.isnull(hi)))]
-            sufficient_hets[j] = len(hi)
-            # Need to filter based on individuals counts
-            if len(hi) >= num_threshold:
-                refi = [(k, REF) for k in hi.index]
-                alti = [(k, ALT) for k in hi.index]
-                try:
-                    ref = np.asarray(self.aei.ix[j, refi].values,
-                            dtype=np.float64)
-                    alt = np.asarray(self.aei.ix[j, alti].values, 
-                            dtype=np.float64)
-                except pd.core.indexing.IndexingError:
-                    # For cases where self.aei is a single row or series
-                    ref = np.asarray(self.aei[refi].values, dtype=np.float64)
-                    alt = np.asarray(self.aei[alti].values, dtype=np.float64)
-                # Filter on counts
-                s = ref + alt
-                s = s >= count_threshold 
-                overall_counts.ix[i, :] = [np.nansum(ref), np.nansum(alt)]
-                allelic_ratio = alt/ref
-                aei_ratios.ix[hi.index, i] = pd.Series(allelic_ratio,
-                        index=hi.index)
-                allelic_ratio = pd.Series(allelic_ratio,
-                        index=hi.index)
+            # hi = hets index
+            hi = list(row[row].index)
+            idx = pd.IndexSlice
+            ref = np.asarray(aei_t.loc[i, idx[hi, REF]].values,
+                    dtype=np.float64)
+            alt = np.asarray(aei_t.loc[i, idx[hi, ALT]].values,
+                    dtype=np.float64)
+            s = ref + alt
+            s = s >= count_threshold 
+            allelic_ratio = alt/ref
+            allelic_ratio = pd.Series(allelic_ratio,
+                    index=hi)
+            aei_ratios.ix[hi, c] = allelic_ratio
+            allelic_ratio[allelic_ratio > 1] =\
+                    1/allelic_ratio[allelic_ratio > 1]
 
-                # Flip the ratio
-                allelic_ratio[allelic_ratio > 1] =\
-                        1/allelic_ratio[allelic_ratio > 1]
-                # Need to do something better for outliers
-                outliers = (np.log2(allelic_ratio) < -3.5) &\
-                        np.logical_not(np.isinf(allelic_ratio))
-                outliers = np.logical_and(outliers, s)
-                outliers_m.ix[hi.index, i] = outliers
-                allelic_ratio = allelic_ratio[np.logical_not(outliers)]
-                if not single_snp:
-                    geno_t = self.geno.ix[:, allelic_ratio.index]
-                    geno_t = dosage_round(geno_t)
-                    pvalues_out.iloc[:,i] = (geno_t.
-                                       apply(single_snp_aei_test2, axis=1, 
-                                       args=(allelic_ratio,)))
-                else:
-                    geno_t = self.geno.ix[single_snp, hi.index]
-                    geno_t = dosage_round(geno_t[np.logical_not(outliers)])
-                    pvalues_out.ix[single_snp, i] =\
-                            single_snp_aei_test2(geno_t, allelic_ratio)
-                hets_dict[j] = hi.index
-            else:
-                outliers = np.repeat(False, len(hi))
-                pvalues_out.iloc[:, i] = np.repeat(np.nan, self.geno.shape[0])
+            outliers = (np.log2(allelic_ratio) < outlier_thresh) |\
+                    np.isinf(np.log2(allelic_ratio))
+            outliers = np.logical_or(outliers, np.logical_not(s))
+            outliers_m.ix[hi, i] = outliers
+            allelic_ratio = allelic_ratio[np.logical_not(outliers)]
+            geno_i = geno_t.ix[:, allelic_ratio.index]
+            pvalues_out.iloc[:, c] = (geno_i.
+                               apply(single_snp_aei_test2, axis=1, 
+                               args=(allelic_ratio,)))
+            hets_dict[i] = hi
+            c += 1 
         self.pvalues = pvalues_out
         self.hets_dict = hets_dict
-        self.sufficient_hets = sufficient_hets
-        overall_counts['Nhets'] = sufficient_hets
-        self.overall_counts = overall_counts
-        # This never actually gets used, but there is currently an error if you
-        # of the local variable being unbound
-        self.outliers = outliers_m
         self.ratios = aei_ratios
-        # Outliers need to be fixed only set on the most recent one atm
+        self.outliers = outliers_m
         
-
 
     def aei_barplot(self, csnp, tsnp, ax=None, gene_name=None, title=True):
         """ AEI barplot
@@ -241,10 +265,7 @@ class AEI(object):
         allelic_ratio = self.ratios.ix[self.hets_dict[tsnp], tsnp]
         allelic_ratio_i = np.argsort(allelic_ratio.values)
         allelic_ratio = np.log2(allelic_ratio.iloc[allelic_ratio_i])
-        outliers =  np.logical_not(np.logical_or(
-                          allelic_ratio < -3.0 ,
-                          allelic_ratio > 3.0
-                          )) 
+        outliers = np.logical_not(self.outliers.ix[self.hets_dict[tsnp], tsnp])
         color_geno = []
         color = color[allelic_ratio_i][outliers]
         for i in color:
@@ -272,8 +293,99 @@ class AEI(object):
         self.aei
 
 
+    def barplot_across_genes(self, samples, other_samples, 
+            ax=None, bar_width = 0.35):
+        if ax:
+            pass
+        else:
+            fig, ax = plt.subplots(nrows=2 , ncols=1, 
+                    sharey=False, sharex=True, 
+                    subplot_kw=dict(axisbg='#FFFFFF'))
+        np.zeros((2, self.ratios.shape[1]), dtype=np.float64)
+        ar_samp = defaultdict(list)
+        ar_osamp = defaultdict(list)
+        for i in self.ratios.columns:
+            ar_samp[i] = []
+            ar_osamp[i] = []
+        for i in samples:
+            ar = []
+            for j in self.ratios.columns:
+                if i in self.hets_dict[j]:
+                    c_ar = self.ratios.ix[i, j]
+                    if c_ar <= 1:
+                        c_ar = 1/c_ar
+                    else: pass
+                    if self.outliers.ix[i, j]:
+                        pass
+                    else:
+                        ar_samp[j].append(c_ar)
+                else: pass
+        for i in other_samples:
+            for j in self.ratios.columns:
+                if i in self.hets_dict[j]:
+                    c_ar = self.ratios.ix[i, j]
+                    if c_ar <= 1:
+                        c_ar = 1/c_ar
+                    else: pass
+                    if self.outliers.ix[i, j]:
+                        pass
+                    else:
+                        ar_osamp[j].append(c_ar)
+                else: pass
+        smean = []
+        sstd = []
+        for snps, ratios in ar_samp.iteritems():
+            mdat = np.ma.masked_array(ratios, np.isnan(ratios))
+            smean.append(np.mean(mdat))
+            sstd.append(np.std(mdat))
+        osm = []
+        sosm = []
+        for snps, ratios in ar_osamp.iteritems():
+            mdat = np.ma.masked_array(ratios,np.isnan(ratios))
+            osm.append(np.mean(mdat))
+            sosm.append(np.std(mdat))
+        ind = np.arange(len(ar_samp.keys()))
+        rects1 = ax.bar(ind, smean, bar_width, color='r', yerr=sstd)
+        rects2 = ax.bar(ind + bar_width, osm, bar_width,  color='y', yerr=sosm)
+        if ax:
+            return(ax)
+        else: return(fig)
 
-    def aei_plot_single(self, tsnp, ax=None, focus_snp=None):
+
+    def plot_aei_within_individual(self, samples, 
+            other_samples=None, ax=None, exon_scale=1,
+            intron_scale=20):
+        if ax:
+            pass
+        else:
+            fig, ax = plt.subplots(nrows=1 , ncols=1, 
+                    sharey=False, sharex=True, 
+                    subplot_kw=dict(axisbg='#FFFFFF'))
+        counter = 0
+        for i in samples:
+            pos = []
+            ar = []
+            for j in self.ratios.columns:
+                if i in self.hets_dict[j]:
+                    c_ar = self.ratios.ix[i, j]
+                    if c_ar <= 1:
+                        c_ar = 1/c_ar
+                    else: pass
+                    if self.outliers.ix[i, j]:
+                        pass
+                    else:
+                        pos.append(self.snp_annot.ix[j, 'pos'])
+                        ar.append(c_ar)
+                else: pass
+            scatter = ax.plot(pos, ar, '-o')
+            counter += 1
+        if ax:
+            return(ax)
+        else: return(fig)
+
+
+
+    def aei_plot_single(self, cissnp, ax=None, focus_snp=None):
         """
         Arguments
         ---------
@@ -289,7 +401,7 @@ class AEI(object):
             fig, ax = plt.subplots(nrows=1 , ncols=1, 
                     sharey=False, sharex=True, 
                     subplot_kw=dict(axisbg='#FFFFFF'))
-        adj_pvalue = -1*np.log10(self.pvalues.loc[:, tsnp])
+        adj_pvalue = -1*np.log10(self.pvalues.loc[:, cissnp])
         if focus_snp:
             print('focus snp')
             snp = focus_snp

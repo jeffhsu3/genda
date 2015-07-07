@@ -10,9 +10,15 @@ heirarchical clustering, etc.
 
 
 Installation
-===========
+============
 
     python setup.py install
+
+
+Allelic Expression Imbalance
+============================
+![AEI](./doc/source/images/example_aei.png?raw=true, "AEI Example")
+
 
 Documentation
 =============
@@ -24,5 +30,6 @@ External Library Requirments:
     - `matplotlib <http://matplotlib.org/>`_
     - `scipy <http://www.scipy.org/>`_
     - `cython <http://www.cython.org/>`_
+    - `numpy <http://http://www.numpy.org/`_
 
 
