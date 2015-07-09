@@ -1,18 +1,19 @@
 """ Plotting functions for eQTLs
 """
+from collections import defaultdict
+import re
+
 import numpy as np
 import pandas as pd
 import matplotlib
 import statsmodels.api as sm
-
 import matplotlib.pyplot as plt
 from statsmodels.graphics import utils as smutils
 from statsmodels.graphics.regressionplots import abline_plot
 
-from genda.plotting import should_not_plot, add_gene_bounderies
+from genda.plotting import (should_not_plot, add_gene_bounderies,
+        snp_arrow)
 from genda import calculate_minor_allele_frequency, calculate_ld
-
-from IPython import embed
 
 
 def var_boxplot(ax, x, colors=None):
@@ -185,8 +186,6 @@ def plot_eQTL(meQTL, gene_name, annotation, dosage, ax=None,
     snp_pv = adj_pv.iloc[iix[0]]
     color1 = calculate_ld(dosage_sub,
             snp)[dosage_sub.index].values
-    print(snp)
-    print(color1[0:5])
     if ax is None:
         ax_orig = False 
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(16, 6), 
@@ -204,13 +203,7 @@ def plot_eQTL(meQTL, gene_name, annotation, dosage, ax=None,
     ### Actual scatter #############################
     im = ax.scatter(pos, adj_pv, s=dosage_maf, c = color1)
     #:TODO make the arrow into a funciton
-    arrow_start = ylim - max(adj_pv/6.0)/2
-    arrow_length = max(adj_pv/6.0/2) - max(adj_pv/6.0/2)/8
-    ax.arrow(snpx, arrow_start, 0, - arrow_length, 
-            head_width=0.01, head_length=0.1, fc='k',
-            ec='k')
-    ax.text(snpx-0.05 , arrow_start + max(adj_pv/6.0)/5.0, 
-            snp, style='italic')
+    ax = snp_arrow(snpx, snp_pv, snp, ax)
     ax.set_ylabel(r'$-log_{10}$ eQTL p-value')
     ax.set_xlabel(r'Position (Mb)')
     if should_not_plot(gene_annot):

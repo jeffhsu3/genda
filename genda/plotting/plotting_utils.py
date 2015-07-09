@@ -1,14 +1,49 @@
 """ Functions for adding to an axis.  Most functions here require passing in an
 axis object from matplotlib
 """
-
-#from collections import defaultdict
+from collections import defaultdict
+import re
 import matplotlib.patches as patches
 from matplotlib.path import Path
 import numpy as np
 import pandas as pd
 
 from genda.formats.dosages import grab_gene_location
+
+
+def create_path(gtf_iterator, gene, height=0.5, x_scale=1):
+    """ Create a path for a given transcript
+
+    :TODO change name
+    """
+    transcripts = defaultdict(list)
+    t_rxe = re.compile('transcript_id "(ENST[0-9]+)"')
+    t_add = 0
+    for i in gtf_iterator:
+        mverts = []
+        i = i.split("\t")
+        if (i[3] == gene or gene in i[9]) and i[7] == 'exon':
+            verts = [(int(i[1])/x_scale, t_add),
+                     (int(i[1])/x_scale, height + t_add),
+                     (int(i[2])/x_scale, height + t_add),
+                     (int(i[2])/x_scale, t_add),
+                     (int(i[1])/x_scale, t_add),
+                    ] 
+           
+	    codes = [
+		    Path.MOVETO,
+		    Path.LINETO,
+		    Path.LINETO,
+		    Path.LINETO,
+		    Path.CLOSEPOLY,
+		    ]
+	    transcript = t_rxe.search(i[9]).group(1)
+	    if transcript not in transcripts.keys():
+	        t_add += 1
+	    else: pass
+	    transcripts[transcript].append(Path(verts, codes))
+        else: pass
+    return(transcripts)
 
 
 def should_not_plot(x):
