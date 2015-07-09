@@ -80,10 +80,9 @@ def plot_dosage_by_rsID(gene_reference, dos, cov_mat, counts,
              c = colors)
     if not title:
         title = gr.gene
-    ax.set_title('%s partial regression\non %s' % (title, gr.rsID), 
-            fontsize=22)
-    ax.set_ylabel('$log_{2}$ CPM', fontsize=16)
-    ax.set_xlabel('Fitted Dosages', fontsize=16)
+    ax.set_title('%s partial regression\non %s' % (title, gr.rsID))
+    ax.set_ylabel('$log_{2}$ CPM')
+    ax.set_xlabel('Fitted Dosages')
     xticks = ax.get_xticks()
     yticks = ax.get_yticks()
     ax.set_xticks(xticks[1::2])
@@ -99,7 +98,7 @@ def plot_dosage_by_rsID(gene_reference, dos, cov_mat, counts,
     ax.tick_params(axis='both', which='major', labelsize=16)
     ax.text(xticks[0] + 0.025 , yticks[annot_y] + annot_y/2*yrange/5, 
             '$R^{2}$=%s' % str(test.rsquared)[0:4], 
-            style='italic', fontsize=16)
+            style='italic')
     if ax_orig:
         return(ax, test)
     else:
@@ -202,12 +201,11 @@ def plot_eQTL(meQTL, gene_name, annotation, dosage, ax=None,
     else: pass
     if symbol:
         gene_name = symbol
-    #ax.set_title(r'eQTL for %s' % gene_name, fontsize=25)
     if ax_orig:
         return(ax)
     else: 
         cbar_ax = fig.add_axes([0.87, 0.15, 0.05, 0.7])
         bar = fig.colorbar(im, cax=cbar_ax)
         bar.ax.tick_params(labelsize=18)  
-        bar.set_label('r$^{2}$', fontsize=24)
+        bar.set_label('r$^{2}$')
         return(fig)
