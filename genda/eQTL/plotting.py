@@ -1,29 +1,16 @@
 """ Plotting functions for eQTLs
 """
-from collections import defaultdict
-import re
 
 import numpy as np
 import pandas as pd
 import matplotlib
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
-from statsmodels.graphics import utils as smutils
 from statsmodels.graphics.regressionplots import abline_plot
 
-from genda.plotting import (should_not_plot, add_gene_bounderies,
-        snp_arrow)
+from genda.plotting import (should_not_plot, snp_arrow)
 from genda import calculate_minor_allele_frequency, calculate_ld
 
-
-def var_boxplot(ax, x, colors=None):
-    """
-    Arguments:
-    ----------
-    ax - axis object
-    """
-    for i in x:
-        pass
 
 
 class gene_reference(object):
@@ -150,7 +137,6 @@ def plot_eQTL(meQTL, gene_name, annotation, dosage, ax=None,
     else: pass
 
     x_formatter = matplotlib.ticker.ScalarFormatter(useOffset=False)
-    cm = plt.cm.get_cmap('Blues')
     x_scale= 1e6
     try:
         adj_pv = -1*np.log10(subset.ix[:,'p-value'])
