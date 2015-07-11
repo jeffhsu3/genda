@@ -7,7 +7,6 @@ import matplotlib
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
 from statsmodels.graphics.regressionplots import abline_plot
-= counts.ix[gr.gene, cov_mat_t.index]
 
 from genda.plotting import (should_not_plot, snp_arrow)
 from genda import calculate_minor_allele_frequency, calculate_ld
@@ -60,7 +59,9 @@ def plot_dosage_by_rsID(gene_reference, dos, cov_mat, counts,
     else:
         adj_counts = counts.ix[gr.gene, cov_mat_t.index]
         const = 0
+    # Need to grab original genotypes
     colors = []
+    # Make this into a function
     color_dict = np.linspace(0, 1, 3)
     for i in geno:
         if i <= 0.5:
