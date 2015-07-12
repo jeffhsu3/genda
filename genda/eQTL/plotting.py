@@ -8,9 +8,8 @@ import statsmodels.api as sm
 import matplotlib.pyplot as plt
 from statsmodels.graphics.regressionplots import abline_plot
 
-from genda.plotting import (should_not_plot, snp_arrow)
+from genda.plotting import (snp_arrow)
 from genda import calculate_minor_allele_frequency, calculate_ld
-
 
 
 class gene_reference(object):
@@ -188,17 +187,11 @@ def plot_eQTL(meQTL, gene_name, annotation, dosage, ax=None,
     ### Actual scatter #############################
     im = ax.scatter(pos, adj_pv, s=dosage_maf, c = color1)
     #:TODO make the arrow into a funciton
-    ax = snp_arrow(snpx, snp_pv, snp, ax)
+    if focus_snp:
+        ax = snp_arrow(snpx, snp_pv, snp, ax)
+    else: pass
     ax.set_ylabel(r'$-log_{10}$ eQTL p-value')
     ax.set_xlabel(r'Position (Mb)')
-    if should_not_plot(gene_annot):
-        pass
-        '''
-        patch = add_gene_bounderies(ax, gene_annot, 
-                gene_name, x_scale)
-        ax.add_patch(patch)
-        '''
-    else: pass
     if symbol:
         gene_name = symbol
     if ax_orig:
