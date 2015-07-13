@@ -231,4 +231,3 @@ def get_path_max_and_min(gene_dict):
             for k in j.vertices:
                 points.append(k[0])
     return(min(points), max(points))
-

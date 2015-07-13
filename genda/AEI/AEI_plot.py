@@ -1,46 +1,21 @@
-import copy
+from math import ceil
+
 import numpy as np
 import pandas as pd
-import pysam
 from scipy.stats import ttest_ind, pearsonr
 import matplotlib.pyplot as plt
 import mpld3
 from mpld3 import plugins
-from math import ceil
-import matplotlib.patches as patches
-from genda.formats.dosages import grab_gene_location
-from mpld3.plugins import PluginBase
-import jinja2
-import json
 import matplotlib
-from matplotlib.path import Path
+import matplotlib.patches as patches
 
-def make_rectangle(start, end, y1, y2):
-    verts = [(start, y1),
-            (start, y2),
-            (end, y2),
-            (end, y1),
-            (start, y1),
-            ]
-    codes = [
-            Path.MOVETO,
-            Path.LINETO,
-            Path.LINETO,
-            Path.LINETO,
-            Path.CLOSEPOLY,
-            ]
-    return (Path(verts, codes))
+#from mpld3.plugins import PluginBase
+#import jinja2
+#import json
 
+from genda.formats import grab_gene_location
+from genda.plotting import (make_rectangle, should_not_plot)
 
-def should_not_plot(x):
-    if x is None:
-        return True
-    elif isinstance(x, np.ndarray):
-        return x.size==0
-    elif isinstance(x, pd.DataFrame):
-        return True
-    else:
-        return(bool(x))
 
 def dosage_round(geno, threshold = 0.5):
     """ Rounds dosage to threshold
@@ -54,7 +29,7 @@ def dosage_round(geno, threshold = 0.5):
 def multiple_snp_aei_test(geno, outliers, allelic_ration, num_threshold=5):
     """
     """
-    pass
+    raise NotImplementedError
 
 
 def single_snp_aei_test(geno, outliers, allelic_ratio, num_threshold=5):
@@ -91,7 +66,8 @@ class AEI_object(object):
                                sharey=False, sharex=True, 
                                subplot_kw=dict(axisbg='#FFFFFF'))
         if gene_name:
-            title = 'AEI at tag %s for %s and\ncolored by genotype at %s' % (gene_name, tag_snp, cis_snp)
+            title = ('AEI at tag %s for %s and\n'
+            'colored by genotype at %s') % (gene_name, tag_snp, cis_snp)
         else:
             title = "AEI at tag %s and\ncolored by genotype at %s" % (tag_snp,
                     cis_snp)
