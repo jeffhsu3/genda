@@ -11,8 +11,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 from genda import calculate_minor_allele_frequency, calculate_ld
-from genda.plotting import (should_not_plot, add_gene_bounderies,
-        add_snp_arrow, plot_transcript)
+from genda.plotting import (snp_arrow)
 from genda.eQTL import plot_eQTL
 
 
@@ -419,7 +418,8 @@ class AEI(object):
         ax.set_ylabel(r'-$log_{10}$ AEI p-value')
         ylim = (max(adj_pvalue) + max(adj_pvalue/6.0))
         ax.set_ylim((-0.01, ylim))
-        ax = add_snp_arrow(adj_pvalue[snp_iloc], pos[snp_iloc], snp, ax)
+        #ax = add_snp_arrow(adj_pvalue[snp_iloc], pos[snp_iloc], snp, ax)
+        ax = snp_arrow(pos[snp_iloc], adj_pvalue[snp_iloc], snp, ax)
         if ax:
             return(ax)
         else:
