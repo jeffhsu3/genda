@@ -4,7 +4,6 @@ import gzip
 import numpy as np
 import pandas as pd
 import pysam
-import pickle as pkl
 import statsmodels.api as sm
 
 class Dosage(object):
@@ -65,20 +64,6 @@ def get_dosages_by_range(chrm, start, end, gene_name, annotation_file,
     return Dosage(out_dos, annot, gene_name)
 
 
-def grab_gene_location(hgnc, cis_buffer=0, ensid = False):
-    """ :TODO maybe query ensembl for this
-    :TODO ensid matching
-    """
-    ann_file = "/proj/genetics/Projects/shared/Subject_Sources/" +\
-            "External/Ensembl/OutputData/EnsemblAnnotationAllHumanGenes.bed.gz"
-    with gzip.open(ann_file) as annot:
-        for line in annot:
-            if hgnc in line:
-                line = line.split("\t")
-                return(line[0], int(line[1]) - cis_buffer, 
-                        int(line[2]) + cis_buffer, str(line[4]))
-
-
 
 def generate_dosage_mapping(dosage_file, mapping_file = None, interval=50):
     """
@@ -106,10 +91,6 @@ def eQTL_func(snps, cov, expression):
     model = sm.OLS(expression, cov)
     return(model.fit().pvalues['snps'])
 
-def two_eQTL_func(snps, cov, expression, snp2):
-    """
-    """
-    pass
 
 class eQTL(object):
     """ Python class for completing eQTLs.  Does lazy loading of all large

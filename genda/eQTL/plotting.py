@@ -23,6 +23,18 @@ class gene_reference(object):
         self.rsID = rsID
 
 
+def subset_meQTL(meQTL, gene_name):
+    """ 
+    """
+    try:
+        index = meQTL.gene == gene_name
+        subset = meQTL.ix[index, :]
+    except AttributeError:
+        # Case where eQTL matrix is already 1 gene
+        subset = meQTL
+    return(subset)
+
+
 def plot_dosage_by_rsID(gene_reference, dos, cov_mat, counts,
         title = None, ax = None,
         additional_covar=None, 
@@ -104,16 +116,6 @@ def plot_dosage_by_rsID(gene_reference, dos, cov_mat, counts,
         return(fig, test)
 
 
-def subset_meQTL(meQTL, gene_name):
-    """
-    """
-    try:
-        index = meQTL.gene == gene_name
-        subset = meQTL.ix[index, :]
-    except AttributeError:
-        # Case where eQTL matrix is already 1 gene
-        subset = meQTL
-    return(subset)
 
 
 

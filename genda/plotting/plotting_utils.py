@@ -108,7 +108,8 @@ def plot_transcript(transcript_id, paths, ax, y=0, height=2.,
 def add_gene_bounderies(ax, gene_annot, gene_name, x_scale):
     """ Add gene bounderies to an axis
     """
-    gene_bounds = grab_gene_location(gene_name, cis_buffer=0)
+    gene_bounds = grab_gene_location(gene_name,
+            ann_file = gene_annot, cis_buffer=0)
     path_a = make_rectangle(float(gene_bounds[1])/x_scale, 
             float(gene_bounds[2])/x_scale,
             0, 200)
@@ -231,7 +232,3 @@ def get_path_max_and_min(gene_dict):
                 points.append(k[0])
     return(min(points), max(points))
 
-
-class read_plots(object):
-    def __init__(self):
-        pass
