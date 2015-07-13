@@ -8,7 +8,7 @@ from matplotlib.path import Path
 import numpy as np
 import pandas as pd
 
-from genda.formats.dosages import grab_gene_location
+from genda.formats import grab_gene_location
 
 
 def create_path(gtf_iterator, gene, height=0.5, x_scale=1):
