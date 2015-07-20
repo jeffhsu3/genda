@@ -17,7 +17,7 @@ def window_norm(y, window_size):
     """
 
     # Handles the edge cases
-    pass
+    raise NotImplementedError
 
 
 def savitzky_golay(y, window_size, order, deriv=0):
