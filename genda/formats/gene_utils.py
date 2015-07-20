@@ -1,6 +1,5 @@
 """
 """
-
 import json
 import requests
 import gzip
@@ -42,3 +41,17 @@ def grab_gene_location(id, ann_file = None, cis_buffer=0):
     else:
         raise NotImplementedError 
 
+
+def get_transcript_ids(gene):
+    """ Get transcript ids from ensembl 
+    REST API from ensemble gene ID
+    """
+    server = "http://rest.ensembl.org"
+    ext = "/lookup/id/{0}?species=homo_sapiens;expand=1"
+    r = requests.get(server+ext.format(gene), headers={ "Content-Type" :
+        "application/json"})
+    out_transcripts = []
+    decoded = r.json()
+    for i in decoded['Transcript']:
+        out_transcripts.append(i['id'])
+    return(out_transcripts)

@@ -106,7 +106,6 @@ def plot_dosage_by_rsID(gene_reference, dos, cov_mat, counts,
     else:
         annot_y = 1
     yrange = yticks[-1] - yticks[0]
-    ax.tick_params(axis='both', which='major', labelsize=16)
     ax.text(xticks[0] + 0.025 , yticks[annot_y] + annot_y/2*yrange/5, 
             '$R^{2}$=%s' % str(test.rsquared)[0:4], 
             style='italic')
