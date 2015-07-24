@@ -92,7 +92,7 @@ def plot_dosage_by_rsID(gene_reference, dos, cov_mat, counts,
     if title:
         ax.set_title('%s partial regression\non %s' % (title, gr.rsID))
     else: pass
-    ax.set_ylabel('$log_{2}$ CPM')
+    sx.set_ylabel('$log_{2}$ CPM')
     ax.set_xlabel('Fitted Dosages')
     xticks = ax.get_xticks()
     yticks = ax.get_yticks()
@@ -119,7 +119,8 @@ def plot_dosage_by_rsID(gene_reference, dos, cov_mat, counts,
 
 
 def plot_eQTL(meQTL, gene_name, annotation, dosage, ax=None,
-        symbol=None, focus_snp=None, gene_annot=None, **kwargs):
+        symbol=None, focus_snp=None, gene_annot=None, size_shift = 0 ,
+        **kwargs):
     """ Plot eQTL from a full_matrix object
     Arguments
     ---------
@@ -155,7 +156,7 @@ def plot_eQTL(meQTL, gene_name, annotation, dosage, ax=None,
 
     dosage_maf =\
             calculate_minor_allele_frequency(dosage_sub)
-    dosage_maf = ((150 * dosage_maf) + 20)
+    dosage_maf = ((150 * dosage_maf) + 20) + size_shift
     if focus_snp:
         snp = focus_snp
     else:
@@ -178,7 +179,6 @@ def plot_eQTL(meQTL, gene_name, annotation, dosage, ax=None,
                                subplot_kw=dict(axisbg='#FFFFFF'))
         fig.tight_layout() 
         fig.subplots_adjust(right=0.8, bottom=0.2)
-        #bar.ax.set_position((0.85, 0.14, 0.02, 0.725))
     else:
         ax_orig = True
     ax.set_xlim((min(pos) -0.01, max(pos) + 0.01))
