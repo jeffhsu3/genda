@@ -1,7 +1,7 @@
 
 
 def snp_arrow(pos, height, snpid, ax, 
-        hadjust=0.0, xadjust=0.0)
+        hadjust=0.0, xadjust=0.0,
         **kwargs):
     """ Draws an arrow pointing at a SNP in 
     a Manhattan plot
