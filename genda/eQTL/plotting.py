@@ -92,7 +92,7 @@ def plot_dosage_by_rsID(gene_reference, dos, cov_mat, counts,
     if title:
         ax.set_title('%s partial regression\non %s' % (title, gr.rsID))
     else: pass
-    sx.set_ylabel('$log_{2}$ CPM')
+    ax.set_ylabel('$log_{2}$ CPM')
     ax.set_xlabel('Fitted Dosages')
     xticks = ax.get_xticks()
     yticks = ax.get_yticks()
