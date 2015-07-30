@@ -439,7 +439,9 @@ class AEI(object):
         IMPLMENTED
         """
         x_scale = 1e6
-        size_maf = ((200 * self.maf) + 20)
+        maf = self.maf.copy()
+        maf[maf > 0.5] = 1 - maf
+        size_maf = ((200 * maf) + 20)
         cm = plt.cm.get_cmap('Blues')
         '''
         color1 = calculate_ld(self.geno,

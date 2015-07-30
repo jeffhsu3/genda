@@ -188,9 +188,6 @@ def plot_eQTL(meQTL, gene_name, annotation, dosage, ax=None,
     ### Actual scatter #############################
     im = ax.scatter(pos, adj_pv, s=dosage_maf, c = color1)
     #:TODO make the arrow into a funciton
-    if focus_snp:
-        ax = snp_arrow(snpx, snp_pv, snp, ax)
-    else: pass
     ax.set_ylabel(r'$-log_{10}$ eQTL p-value')
     ax.set_xlabel(r'Position (Mb)')
     if symbol:
