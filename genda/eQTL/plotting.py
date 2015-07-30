@@ -156,7 +156,8 @@ def plot_eQTL(meQTL, gene_name, annotation, dosage, ax=None,
 
     dosage_maf =\
             calculate_minor_allele_frequency(dosage_sub)
-    dosage_maf = ((150 * dosage_maf) + 20) + size_shift
+    dosage_maf[dosage_maf > 0.5] = 1-dosage_maf[dosage_maf> 0.5]
+    dosage_maf = ((200 * dosage_maf) + 20) + size_shift
     if focus_snp:
         snp = focus_snp
     else:

@@ -440,7 +440,7 @@ class AEI(object):
         """
         x_scale = 1e6
         maf = self.maf.copy()
-        maf[maf > 0.5] = 1 - maf
+        maf[maf > 0.5] = 1 - maf[maf > 0.5]
         size_maf = ((200 * maf) + 20)
         cm = plt.cm.get_cmap('Blues')
         '''
