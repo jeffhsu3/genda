@@ -198,7 +198,7 @@ def create_gene_path(gtf_iter, gene, x_scale):
     -------
     None
     """
-    pass
+    raise NotImplementedError
 
 
 def draw_arrows(xmin, xmax, y, ax, spacing=0.001):
@@ -231,3 +231,52 @@ def get_path_max_and_min(gene_dict):
             for k in j.vertices:
                 points.append(k[0])
     return(min(points), max(points))
+
+
+def plot_transcript_i(transcript, ax, y=0, height=2., 
+        intron_scale=0.10, scale=1):
+    '''
+    Arguments
+    =========
+    transcript - a list of exons (start, end, exon_number)
+    :TODO transcript could be an object.  
+    ax - matplotlib axes object
+
+    Returns:
+    =======
+    matplotlib.axis
+    new_scaled_ylim and xlim
+    '''
+    xmin, xmax = 1e12, 0
+    ymin, ymax = ax.get_ylim()
+    beg_exon = transcript[0]
+    path = make_rectangle(beg_exon[0], beg_exon[1], y, y+height)
+    patch = patches.PathPatch(path, facecolor='grey', alpha=0.6)
+    ax.add_patch(patch)
+    rx = transcript[0][1]
+    for i, exon in enumerate(transcript[1:]):
+        intron_l = (exon[0] - transcript[i - 1][1]) * intron_scale
+        exon_length = exon[1] - exon[0]
+        ns = rx + intron_l
+        ne = rx + exon_length
+        path = make_rectangle(ns, ne, y, y+height)
+        patch = patches.PathPatch(path, facecolor='grey', alpha=0.6)
+        ax.add_patch(patch)
+        rx = rx + intron_l + exon_length
+        if ns < xmin: xmin = ns
+        if ne > xmax: xmax = ne
+    return(ax, (beg_exon[0], xmax))
+
+
+
+def add_size_legends(ax, size_base=200):
+    sizes = [((size_base * i ) + 20) for i in np.linspace(0,0.5, num = 4)]
+    l1 = ax.scatter([],[], s=sizes[0])
+    l2 = ax.scatter([],[], s=sizes[1])
+    l3 = ax.scatter([],[], s=sizes[2])
+    l4 = ax.scatter([],[], s=sizes[3])
+    leg = ax.legend([l1, l2, l3, l4], 
+            labels = np.around(np.linspace(0, 0.5, num=4), decimals=2),
+            fontsize=14, loc=0,
+            frameon=True, title='maf', scatterpoints=1)
+    return(ax)
