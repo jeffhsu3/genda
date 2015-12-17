@@ -1,3 +1,4 @@
+from bx.intervals.intersection import Intersecter, Interval
 
 
 class SNPInfo(object):
@@ -99,6 +100,9 @@ def unique_sets(set_list):
     return(out_sets)
 
 
+
+
+
 def compare_two_transcripts(trans1, trans2, transcript_dict):
     """
     Returns the splice differences between two transcripts.
@@ -106,16 +110,20 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
 
     Parameters
     ----------
-    :TODO refactor this
-    :TODO still not finished
-    """
+    trans1 - string of transcript of interest
+    trans2 - string of second transcript of interest
+    transcript_dict - a dictionary of transcript names with 
+    values being a list of exons
 
+    Returns:
+    5' upstream exons - 
+    3' downstram exons - 
+    """
     t1 = transcript_dict[trans1]
     t2 = transcript_dict[trans2]
-
+    tree = Intersecter()
     starts1 = [i[0] for i in t1]
     starts2 = [i[0] for i in t2]
-    # Assume sorted
     reverse = False
     if min(starts1) >= min(starts2):
         s1 = t2 
@@ -124,37 +132,58 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
     else:
         s1 = t1
         s2 = t2
-    # Assume sorted order, ordering in reverse by construction
     if reverse:
         torder = (trans2, trans1)
     else:
         torder = (trans1, trans2)
-    oc = 0
-    #start_matches = False
-    exclusive_juncs = []
-    matching_exons = []
-    skipped_exons = []
+
     for i in s1:
-        if (i[0] < s2[0][0]) and (i[1] <= s2[0][0]): 
+        tree.add_interval(Interval(int(i[0]), int(i[1]), 
+            value={'anno':i[2]}))
+    matching_exons = []
+    exclusive_juncs = []
+    skipped_exons = []
+    # Perform the query
+    start_of_exons = None
+    s1.sort(key=lambda x: x[2])
+    s2.sort(key=lambda x: x[2])
+    for start, end, exon_n in s2:
+        start = int(start)
+        end = int(end)
+        overlap = tree.find(int(start), int(end))
+        if len(overlap) == 0:
+            if start_of_exons:
+                skipped_exons.append((start, end, (None, exon_n), (0,end-start)))
+            else: pass
+        elif len(overlap) == 1:
+            if start_of_exons: pass
+            else: start_of_exons = overlap[0].value['anno']
+            if start == overlap[0].start and end == overlap[0].end:
+                matching_exons.append((start, end, (overlap[0].value['anno'], 
+                    exon_n), (0, 0)))
+            else:
+                sstart = min(start, overlap[0].start)
+                ssend = max(end, overlap[0].end)
+                exclusive_juncs.append((sstart , ssend,
+                                        (overlap[0].value['anno'], exon_n), 
+                                        (overlap[0].start - start, 
+                                        overlap[0].end - end) 
+                                        ))
+        else:
+            if start_of_exons:
+                pass
+            else: start_of_exons = overlap[0].value['anno']
+    # Checking for skipped exons of t1 missing in t2
+    hit_exon = [i[2][0] for i in exclusive_juncs] 
+    hit_exon.extend([i[2][0] for i in matching_exons])
+
+    for start, end, exon_n in s1:
+        if exon_n <= start_of_exons:
             pass
-        elif (i[0] < s2[oc][0]) and (i[1] > s2[oc][0]):
-            # 5' difference
-            print('5 primt diff')
-            sdiff = i[0] - s2[oc][0]
-            ediff = i[1] - s2[oc][1]
-            print(s2[oc])
-            exclusive_juncs.append((i[0], s2[oc][0], 
-                sdiff, ediff, (i[2], s2[oc][2])))
-            oc += 1
-        elif (i[0] > s2[oc][0]) and (i[0] < s2[oc][1]):
-            print('3 prime diff')
-            print(i[0] - s2[oc][0])
-            print(i)
-            print(s2[oc])
-            #:TODO FIX this
-            oc += 1
-        elif (i[0] == s2[oc][0]) and (i[1] == s2[oc][1]):
-            matching_exons.append((i[2], s2[oc][2]))
-            oc += 1
+        elif exon_n in hit_exon:
             pass
-    return(exclusive_juncs, torder)
+        else:
+            skipped_exons.append((start, end, (exon_n, None), (end-start)) ) 
+            
+
+    return(exclusive_juncs, torder, matching_exons, skipped_exons)

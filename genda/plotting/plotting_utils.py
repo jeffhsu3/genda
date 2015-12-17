@@ -239,8 +239,13 @@ def plot_transcript_i(transcript, ax, y=0, height=2.,
     Arguments
     =========
     transcript - a list of exons (start, end, exon_number)
-    :TODO transcript could be an object.  
+    ax - matplotlib.axes
+    y - where to place the base of the transcript on the y-axis
+    height - height of the boxes of the transcript
     ax - matplotlib axes object
+
+    :TODO transcript could be an object.  
+    :TODO write tests for this
 
     Returns:
     =======
@@ -267,6 +272,11 @@ def plot_transcript_i(transcript, ax, y=0, height=2.,
         if ne > xmax: xmax = ne
     return(ax, (beg_exon[0], xmax))
 
+
+def intron_scaling(transcripts):
+    """ Scale all features shrinking introns
+    """
+    pass
 
 
 def add_size_legends(ax, size_base=200):
