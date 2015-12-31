@@ -76,6 +76,11 @@ def make_rectangle(start, end, y1, y2):
     return (Path(verts, codes))
 
 
+def plot_box_(transcript, ax):
+    
+    path = make_rectangle()
+    return(path)
+
 def plot_transcript(transcript_id, paths, ax, y=0, height=2., 
         full_gene=False):
     """ Plot a transcript
@@ -84,25 +89,36 @@ def plot_transcript(transcript_id, paths, ax, y=0, height=2.,
     xmax = None
     ps = []
     ymin, ymax = ax.get_ylim()
-    for i in paths[transcript_id]:
-        i.vertices[:, 1] = np.asarray([y, y + height, y + height, y, y])
-        if not xmin or not xmax:
+    try:
+        for i in paths[transcript_id]:
+            i.vertices[:, 1] = np.asarray([y, y + height, y + height, y, y])
             if not xmin or not xmax:
-                xmin = np.min(i.vertices[:, 0])
-                xmax = np.max(i.vertices[:, 0])
-            else:
-                if xmin > np.min(i.vertices[:, 0]):
+                if not xmin or not xmax:
                     xmin = np.min(i.vertices[:, 0])
-                elif xmax < np.max(i.vertices[:, 0]):
                     xmax = np.max(i.vertices[:, 0])
-                else: pass
-        ps.append(patches.PathPatch(i, facecolor='darkgray', lw=0))
-    for patch in ps:
-        ax.add_patch(patch)
+                else:
+                    if xmin > np.min(i.vertices[:, 0]):
+                        xmin = np.min(i.vertices[:, 0])
+                    elif xmax < np.max(i.vertices[:, 0]):
+                        xmax = np.max(i.vertices[:, 0])
+                    else: pass
+            ps.append(patches.PathPatch(i, facecolor='darkgray', lw=0))
+        for patch in ps:
+            ax.add_patch(patch)
+    except AttributeError:
+        for i, exon in enumerate(paths[transcript_id]):
+            try:
+                path = make_rectangle(i[0], i[1], y, y+height)
+            except IndexError:
+                path = make_rectangle(i.start, i.end, y, y+height)
+            patch = patches.PathPatch(path, facecolor='grey', alpha=0.6)
+            ax.add_patch(patch)
     # hlines doesn't in this function but outside it?
     #draw_arrows(xmin, xmax, y+height/2.0, ax)
     #ax.hlines(y+height/2.0, xmin, xmax, colors='darkgray', lw=2)
     return(ax)
+
+
 
 
 def add_gene_bounderies(ax, gene_annot, gene_name, x_scale):
@@ -233,12 +249,13 @@ def get_path_max_and_min(gene_dict):
     return(min(points), max(points))
 
 
-def plot_transcript_i(transcript, ax, y=0, height=2., 
+def plot_transcript_(transcript, ax, y=0, height=2., 
         intron_scale=0.10, scale=1):
     '''
     Arguments
     =========
-    transcript - a list of exons (start, end, exon_number)
+    transcript - a list of exons (start, end, exon_number) or
+    a genda.transcripts.Transcript object
     ax - matplotlib.axes
     y - where to place the base of the transcript on the y-axis
     height - height of the boxes of the transcript
@@ -273,10 +290,17 @@ def plot_transcript_i(transcript, ax, y=0, height=2.,
     return(ax, (beg_exon[0], xmax))
 
 
-def intron_scaling(transcripts):
+def _calculate_intron_scaling(transcript):
+    """
+    """
+    raise NotImplemented
+
+
+def intron_scaling(ax):
     """ Scale all features shrinking introns
     """
     pass
+    return(ax)
 
 
 def add_size_legends(ax, size_base=200):

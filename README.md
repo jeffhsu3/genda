@@ -1,5 +1,7 @@
 What is genda?
 ==============
+genda is still very much in development and should not be used by others
+
 genda is a python package that allows the user to import many varieties of 
 genetic data and genda will parse the data, converting it to pandas 
 dataframes. This standardization of data makes it incredibley simple to 
@@ -22,14 +24,16 @@ Allelic Expression Imbalance
 
 Documentation
 =============
-Documentation, along with tutorials, can be found `here <http://pyseq.rtfd.org>`_.
+Documentation, along with tutorials, can be found [here](http://pyseq.rtfd.org).
 
 External Library Requirments:
 =============================
-    - `pandas <http://pandas.pydata.org/>`_
-    - `matplotlib <http://matplotlib.org/>`_
-    - `scipy <http://www.scipy.org/>`_
-    - `cython <http://www.cython.org/>`_
-    - `numpy <http://http://www.numpy.org/`_
-
-
+    - [numpy] (http://http://www.numpy.org/)
+    - [pandas] (http://pandas.pydata.org/)
+    - [matplotlib] (http://matplotlib.org/)
+    - [scipy] (http://www.scipy.org/)
+    - [cython] (http://www.cython.org/)
+    - [bx-python] (https://bitbucket.org/james_taylor/bx-python/wiki/Home)
+    - [statsmodels] (http://statsmodels.sourceforge.net/)
+    - [scikit-learn] (http://scikit-learn.org/stable/)
+    - [pysam] (https://code.google.com/p/pysam/)

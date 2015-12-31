@@ -1,16 +1,13 @@
+from itertools import tee, izip
+# Requires bx python
 from bx.intervals.intersection import Intersecter, Interval
 
 
-class SNPInfo(object):
-    """ Docstring
 
-    """
-
-    def __init__(self, position):
-        self.position = position
-
-    def __call__(self, position):
-        pass
+def pairwise(iterable):
+    a, b = tee(iterable)
+    next(b, None)
+    return(izip(a,b))
 
 
 class Exon(object):
@@ -26,12 +23,16 @@ class Exon(object):
             print("Start and End positions need to be integers")
 
 
+
 class Transcript(object):
     """ A collection of exons
     """
 
+
     def __init__(self, exons=[]):
        self.exons = exons
+
+
 
 
 class Gene(object):
@@ -46,6 +47,7 @@ class Gene(object):
 
     def hmm(self):
         pass
+
 
 
 def break_exons(exon1, exon2):
@@ -147,13 +149,16 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
     start_of_exons = None
     s1.sort(key=lambda x: x[2])
     s2.sort(key=lambda x: x[2])
+    max_exon_1 = max([i[2] for i in s1])
+    max_exon_2 = max([i[2] for i in s2])
     for start, end, exon_n in s2:
         start = int(start)
         end = int(end)
         overlap = tree.find(int(start), int(end))
         if len(overlap) == 0:
             if start_of_exons:
-                skipped_exons.append((start, end, (None, exon_n), (0,end-start)))
+                skipped_exons.append((start, end, 
+                    (None, exon_n), (0,end-start)))
             else: pass
         elif len(overlap) == 1:
             if start_of_exons: pass
@@ -164,11 +169,17 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
             else:
                 sstart = min(start, overlap[0].start)
                 ssend = max(end, overlap[0].end)
-                exclusive_juncs.append((sstart , ssend,
-                                        (overlap[0].value['anno'], exon_n), 
-                                        (overlap[0].start - start, 
-                                        overlap[0].end - end) 
-                                        ))
+                # Ignore 5' or 3' differences
+                if (exon_n == max_exon_2 and
+                        overlap[0].value['anno'] == max_exon_1):
+                    pass
+                else:
+                    exclusive_juncs.append(
+                            (sstart, ssend,
+                            (overlap[0].value['anno'], exon_n), 
+                            (overlap[0].start - start, overlap[0].end - end) 
+                            )
+                    )
         else:
             if start_of_exons:
                 pass
@@ -176,7 +187,6 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
     # Checking for skipped exons of t1 missing in t2
     hit_exon = [i[2][0] for i in exclusive_juncs] 
     hit_exon.extend([i[2][0] for i in matching_exons])
-
     for start, end, exon_n in s1:
         if exon_n <= start_of_exons:
             pass
@@ -184,6 +194,18 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
             pass
         else:
             skipped_exons.append((start, end, (exon_n, None), (end-start)) ) 
-            
-
     return(exclusive_juncs, torder, matching_exons, skipped_exons)
+
+
+def pairwise_transcript_comparison(transcript_dict):
+    """
+    """
+    skipped_exons_out = []
+    for key1, key2 in pairwise(transcript_dict.keys()):
+        exclusive_juncs, to, me, skipped_exons = compare_two_transcripts(
+                key1, key2, transcript_dict)
+        if len(skipped_exons) >=1:
+            skipped_exons_out.append((key1, key2))
+    return(skipped_exons_out)
+
+

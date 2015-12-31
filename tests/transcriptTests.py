@@ -54,8 +54,6 @@ class TestCompareTwoTranscripts(unittest.TestCase):
     def test_compare_transcripts_skipped_exon(self):
         exclusive_juncs, torder, matching_exons, skipped_exons =\
                 compare_two_transcripts('t1', 't2', self.transcript_dict)
-        print(torder)
-        print(exclusive_juncs)
         self.assertEqual([(50, 60, (None, 2), (0, 10)),], skipped_exons)
         
 
