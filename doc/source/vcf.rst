@@ -5,9 +5,11 @@ Working With VCFs
 The VCF Class
 =============
 
-panVCF.VCF(file)
+genda.formats.panVCF.VCF(vcf_file)
     parameters:
-        file - The VCF file which you want to load into panVCF
+        vcf_file - The VCF file which you want to load into panVCF
+        chunksize - pandas.read_csv chunksize DOESN'T WORK ATM as parsing info
+        expects a pd.DataFrame
 
 Data
 ----
@@ -26,6 +28,7 @@ Hardy-Weinberg
 
 Changing Reference Genome
 -------------------------
+    :TODO switch to how NCBI does the first|second pass
     VCF.change_base(old_reference_file, new_reference_file, chrom)
         Used when the reference genome of a vcf file must be changed. Must be done one chromosome at a time (vcf can have more than one, but the fasta files can only have one).
         

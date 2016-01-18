@@ -21,10 +21,11 @@ def parse_chr(entry):
 
 
 def parse_geno(entry, GT=0):
-    """ Need to somehow keep phase, maybe use multi_index, but only
+    """ 
+    :TODO 
+    Need to somehow keep phase, maybe use multi_index, but only
     works if haplotype is contigous across whole section.  Maybe
     groups to denote haplotype regions?
-
     """
     try:
         g = entry.split(":")[GT]
@@ -56,11 +57,7 @@ class VCF(Genotype.Genotype):
         self._parse_meta()
         self.samples = samples
         self.info_dict = []
-
         sex_chromosomes = ['X', 'Y']
-
-
-
         convertor = {}
         #convertor = dict((k + 9 , parse_geno) for k in range(len(samples)))
         #convertor = dict((k + 9 , allele_ratio) for k in range(len(samples)))
@@ -72,12 +69,9 @@ class VCF(Genotype.Genotype):
                                  converters = convertor,
                                  chunksize = chunksize,
                                 )
-
         pg=functools.partial(parse_geno,GT = self.vcf.ix[0,8].split(":").index("GT"))
         self.geno = self.vcf.ix[:,9:].applymap(pg)
-
         #self.vcf.rename(columns = {'#CHROM': 'CHROM'}, inplace=True)
-
         rsID = self.vcf["ID"]
         novel = [str(i) + "_" + str(j) + "_" + str(k) for (i, j, k)\
                  in zip(list(self.vcf["#CHROM"][rsID=="."]),
@@ -86,11 +80,10 @@ class VCF(Genotype.Genotype):
                        )
                 ]
         self.novel = novel
-        rsID[rsID == "."] = np.asarray(novel)
+        rsID.loc[rsID == "."] = np.asarray(novel)
         self.vcf.index = pd.Index(rsID)
         self.geno.index = self.vcf.index
         info_dict = self._split_info(self.vcf.INFO)
-
         # Parsing the INFO
         def flag_parse(info_dict, key):
             try:
@@ -146,8 +139,6 @@ class VCF(Genotype.Genotype):
         del self.vcf['INFO']
         del self.vcf['ID']
         # Parse GENO
-
-
         def _parse_haplotype(entry):
             g = entry.split(":")[0]
             try:
@@ -230,7 +221,9 @@ class VCF(Genotype.Genotype):
         """ Parses meta information and returns a list of the INFO and FORMAT
         fields.
 
-        Okay so all VCF files are slightly different.  Why is the number sometimes a letter?  Jesus
+        Okay so all VCF files are slightly different.  
+        Why is the number sometimes a letter? 
+        :TODO work on edge cases
         """
         convert = {
             'Integer': np.int,
@@ -261,7 +254,7 @@ class VCF(Genotype.Genotype):
 
     def _parse_info(self, entry):
         """ Split the INFO field into a dictionary.  Creates an instance
-        of the class varaible ans saves the dictionary to it.
+        of the class varaible and saves the dictionary to it.
         """
         def parse_field(field):
             try:
@@ -311,7 +304,6 @@ class VCF(Genotype.Genotype):
         """ Returns a list of samples that have the alternate non-ref allele 
         at the variant identified by rsID
         """
-
         non_ref = np.logical_not(self.geno.ix[rsID, :] == 0)
         nans = np.isnan(self.geno.ix[rsID, :])
         return(self.geno.columns[np.logical_or(non_ref, nans)])
@@ -376,13 +368,13 @@ class VCF(Genotype.Genotype):
     def change_base(self, old_ref_file, new_ref_file, chrom):
         from copy import deepcopy
         from Bio import SeqIO
-        newvcf=deepcopy(self.vcf)
+        newvcf = deepcopy(self.vcf)
         old = SeqIO.read(open(old_ref_file), format="fasta")
         new = SeqIO.read(open(new_ref_file), format="fasta")
         from Bio import pairwise2
-        pos={}
+        pos = {}
         diff = {}
-        shifts={}
+        shifts = {}
         shift=0
         old_margin = 0
         new_margin = 0
@@ -462,7 +454,7 @@ class VCF(Genotype.Genotype):
 
             :TODO The multiple conversion isn't quite right
             """
-            for n,p in enumerate(samples):
+            for n, p in enumerate(samples):
                 p = p.split(':')
                 freqs = p[1].split(',')[1] + ',' + p[1].split(',')[0]
                 if multiple_alleles:
@@ -489,7 +481,7 @@ class VCF(Genotype.Genotype):
             d[c[0]] = [c[1], c[2], c[3]]
 
         for row in range(self.vcf.shape[0]):
-            if newvcf.ix[row,0].endswith(chrom):
+            if newvcf.ix[row, 0].endswith(chrom):
                 pos = self.vcf.ix[row,1]
                 newpos=pos + change_coord(pos)
                 if pos in d.keys():
@@ -570,9 +562,10 @@ class VCF(Genotype.Genotype):
         newobj = deepcopy(self)
         newobj.vcf = newvcf
         #pg = functools.partial(parse_geno,GT = self.vcf.ix[0,6].split(":").index("GT"))
-        newobj.geno = newobj.vcf.ix[:,7:].applymap(parse_geno, GT=self.vcf.ix[0,6].split(":").index("GT"))
-
+        newobj.geno = newobj.vcf.ix[:,7:].applymap(parse_geno, 
+                GT=self.vcf.ix[0,6].split(":").index("GT"))
         return newobj
+
 
 def pos_line_convert(line):
     """ Convert chr:pos into a integer

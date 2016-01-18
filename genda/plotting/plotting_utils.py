@@ -106,7 +106,7 @@ def plot_transcript(transcript_id, paths, ax, y=0, height=2.,
         for patch in ps:
             ax.add_patch(patch)
     except AttributeError:
-        for i, exon in enumerate(paths[transcript_id]):
+        for i in paths[transcript_id]:
             try:
                 path = make_rectangle(i[0], i[1], y, y+height)
             except IndexError:
@@ -131,7 +131,6 @@ def add_gene_bounderies(ax, gene_annot, gene_name, x_scale):
             0, 200)
     patch = patches.PathPatch(path_a, facecolor='grey', alpha=0.25)
     return(patch)
-
 
 
 def add_snp_arrow(adj_pv, x, snp, ax):
