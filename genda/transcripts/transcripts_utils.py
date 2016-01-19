@@ -2,6 +2,7 @@ from itertools import tee, izip
 import requests
 # Requires bx python
 from bx.intervals.intersection import Intersecter, Interval
+from collections import defaultdict
 
 
 
@@ -60,14 +61,49 @@ class Gene(object):
     """ A collection of transcripts
     """
 
-    def __init__(self, transcripts=[]):
+    def __init__(self, gene, chrom = None, start=0, end=3e8, 
+            transcripts=[], 
+            symbol=None):
+        '''
+        Arguments
+        ---------
+        '''
+        self.gene = gene
+        self.chrom = chrom
+        self.start = start
+        self.end = end
         self.transcripts = []
 
-    def _unique_junctions(self):
-        pass
+    
+    def get_transcripts(self, gtf_tabix, 
+            buffer = 250000):
+        """Generates transcripts from gtf_tabix.  Replaces
+        self.transcripts.
 
-    def hmm(self):
-        pass
+        Arguments
+        ---------
+        gtf_tabix - A pysam.Tabixfile gtf
+        """
+        pls = gtf_tabix.fetch(self.chrom, self.start - buffer,
+                self.end + buffer)
+        path_dict = defaultdict(list)
+        for i in pls:
+            i = i.split("\t")
+            geni = i[9].split(";")
+            gene_id = geni[0].lstrip(' gene_id "').rstrip('"')
+            if gene_id == self.gene:
+                if i[7] == 'exon':
+                    try:
+                        itrans = geni[1].lstrip(' transcript_id "').rstrip('"')
+                        exon_number = (geni[2].
+                                lstrip(' exon_number "').rstrip('"'))
+                        path_dict[itrans].append([int(i[1]), int(i[2]),
+                            int(exon_number)])
+                    except KeyError:
+                        pass
+                else: pass
+        self.transcript = path_dict
+
 
 
 

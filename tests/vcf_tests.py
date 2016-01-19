@@ -1,5 +1,4 @@
 import unittest, os
-
 from genda.formats.panVCF import VCF
 
 class TestLoadingVCF(unittest.TestCase):
@@ -30,7 +29,6 @@ class TestLoadingVCF(unittest.TestCase):
 
 
     def testInfo(self):
-
         pass
 
 

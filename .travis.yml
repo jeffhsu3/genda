@@ -9,7 +9,7 @@ python:
 
 before_install:
   - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
-  - chomd +x miniconda.sh
+  - chmod +x miniconda.sh
   - ./miniconda.sh -b
   - export PATH=/home/travis/miniconda/bin:$PATH
   - conda update --yes conda
@@ -20,12 +20,13 @@ install:
   - conda install --yes -c bioconda pysam bx-python
   - python setup.py install
 
-
-
-
-
 env: 
   global:
   - NOSE_ARGS="not slow"
 
+script: 
+ - nosetests --with-cov --cov genda --cov-config .coveragerc --logging-level=INFO
 
+
+after_success:
+  - coveralls --config_file .coveragerc

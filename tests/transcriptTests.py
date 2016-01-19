@@ -41,7 +41,7 @@ class TestGenerateSets(unittest.TestCase):
 
 
 class TestCompareTwoTranscripts(unittest.TestCase):
-    """
+    """:TODO add more test cases
     """
     def setUp(self):
         self.transcript_dict = {

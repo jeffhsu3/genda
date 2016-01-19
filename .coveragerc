@@ -1,0 +1,8 @@
+[run]
+source = genda
+omit = 
+    */python?.?/*
+    */lib-python?.?/*.py
+    */lib_pypy/_*.py
+    */site-packages/nose/*
+    */unittests2/*
