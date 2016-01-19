@@ -7,6 +7,7 @@
 *.lock
 *.DS_Store
 *.swp
+*.swo
 *.out
 *.c
 *.o

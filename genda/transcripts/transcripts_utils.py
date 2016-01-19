@@ -1,4 +1,5 @@
 from itertools import tee, izip
+import requests
 # Requires bx python
 from bx.intervals.intersection import Intersecter, Interval
 
@@ -22,6 +23,26 @@ class Exon(object):
         except ValueError:
             print("Start and End positions need to be integers")
 
+
+
+def get_transcript_ids(gene):
+    """ Get transcript ids from Ensembl REST api
+    Returns a list of transcripts,
+
+    :TODO make out_transcripts a list of transcript class
+    """
+    server = "http://rest.ensembl.org"
+    ext = "/lookup/id/{0}?species=homo_sapiens;expand=1"
+    r = requests.get(server+ext.format(gene), headers={ "Content-Type" :
+        "application/json"})
+    out_transcripts = []
+    decoded = r.json()
+    for i in decoded['Transcript']:
+        out_transcripts.append(i['id'])
+    return(out_transcripts, 
+            decoded['display_name'],
+            decoded['seq_region_name'], 
+            (int(decoded['start']), int(decoded['end'])))
 
 
 class Transcript(object):
@@ -120,6 +141,7 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
     Returns:
     5' upstream exons - 
     3' downstram exons - 
+
     """
     t1 = transcript_dict[trans1]
     t2 = transcript_dict[trans2]

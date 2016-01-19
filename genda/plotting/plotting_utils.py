@@ -204,7 +204,8 @@ def coverage_hist(read, hist_array, start):
             hist_array[ii + cont:ii+cont+j] +=1
             cont += j
         elif i==3:
-            pass
+            # cigar is always ordered
+            cont += j
 
 
 def create_gene_path(gtf_iter, gene, x_scale):
