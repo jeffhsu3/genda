@@ -31,6 +31,7 @@ def get_transcript_ids(gene):
     Returns a list of transcripts,
 
     :TODO make out_transcripts a list of transcript class
+    :TODO try GTF first and except to Ensembl otherwise
     """
     server = "http://rest.ensembl.org"
     ext = "/lookup/id/{0}?species=homo_sapiens;expand=1"
@@ -59,15 +60,12 @@ class Transcript(object):
 
 class Gene(object):
     """ A collection of transcripts
+
     """
 
     def __init__(self, gene, chrom = None, start=0, end=3e8, 
-            transcripts=[], 
+            transcripts=[], strand=None, 
             symbol=None):
-        '''
-        Arguments
-        ---------
-        '''
         self.gene = gene
         self.chrom = chrom
         self.start = start
@@ -76,8 +74,9 @@ class Gene(object):
 
     
     def get_transcripts(self, gtf_tabix, 
-            buffer = 250000):
-        """Generates transcripts from gtf_tabix.  Replaces
+            buffer = 500000):
+        """
+        Generates transcripts from gtf_tabix.  Replaces
         self.transcripts.
 
         Arguments
@@ -102,15 +101,15 @@ class Gene(object):
                     except KeyError:
                         pass
                 else: pass
-        self.transcript = path_dict
+        self.transcripts = path_dict
 
 
 
 
 def break_exons(exon1, exon2):
-    """ Returns a list of new exons
-
-    Breaks a interval into 2 intervals if it overlaps, upstream exon always
+    """ 
+    Returns a list of new exons by breaking an interval into 2 intervals if it overlaps, 
+    upstream exon always
     comes first.
 
     """
@@ -132,14 +131,15 @@ def break_exons(exon1, exon2):
 
 
 def unique_sets(set_list):
-    """ Returns a list of sets
+    """ 
+    Returns a list of sets
     Calculates the unique regions defined such that only the same elements
     are bound to it.
     """
 
     # Since most exons are shared, remove the most common elements first
-    common_set = reduce( lambda x, y: x & y, list_of_sets)
-    rs = [i - common_set for i in list_of_sets]
+    common_set = reduce( lambda x, y: x & y, set_list)
+    rs = [i - common_set for i in set_list]
     out_sets = []
     all_unique = True
     n = len(set_list)
@@ -174,9 +174,11 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
     transcript_dict - a dictionary of transcript names with 
     values being a list of exons
 
-    Returns:
+    Returns
+    Exclusive Junctions - 
     5' upstream exons - 
     3' downstram exons - 
+    Skipped Exons -
 
     """
     t1 = transcript_dict[trans1]
@@ -196,7 +198,6 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
         torder = (trans2, trans1)
     else:
         torder = (trans1, trans2)
-
     for i in s1:
         tree.add_interval(Interval(int(i[0]), int(i[1]), 
             value={'anno':i[2]}))

@@ -19,6 +19,7 @@ user*.txt
 
 /build
 /doc/build
+/dist
 
 tests/data/chrY.1000.vcf
 *egg-info/
