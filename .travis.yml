@@ -26,7 +26,7 @@ env:
   - NOSE_ARGS="not slow"
 
 script: 
- - nosetests --with-cov --cov genda --cov-config .coveragerc --logging-level=INFO
+ - nosetests --with-cov --cov-config .coveragerc --logging-level=INFO genda 
 
 
 after_success:
