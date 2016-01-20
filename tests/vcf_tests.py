@@ -6,7 +6,8 @@ class TestLoadingVCF(unittest.TestCase):
     """
 
     def setUp(self):
-        self.filename = './data/chrY.test.vcf'
+        path = os.path.dirname(os.path.abspath(__file__))
+        self.filename = path + '/data/chrY.test.vcf'
         self.VCF = VCF(self.filename)
 
 

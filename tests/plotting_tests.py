@@ -10,14 +10,14 @@ class TestPlotTranscript(unittest.TestCase):
     pass
 
 
-    def test_plot_transcript_paths():
+    def test_plot_transcript_paths(self):
         """Testcase where the input 
         to plot_transcript are already paths
         """
         #plot_transcript
         pass
 
-    def test_plot_transcript_dict():
+    def test_plot_transcript_dict(self):
         """Testcase where the input 
         to plot_transcript are dict
         of transcripts

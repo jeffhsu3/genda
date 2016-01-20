@@ -1,16 +1,17 @@
 import unittest, os
 import numpy as np
-import pandas as pd
 
-from pySeq.formats.PED import PED
+from genda.formats.PED import PED
+
 
 class TestLoadingSingleColumnData(unittest.TestCase):
     """ Testing loading VCF files into pandas
     """
 
     def setUp(self):
-        self.pedfile = './data/test.ped'
-        self.mapfile = './data/test.map'
+        path = os.path.dirname(os.path.abspath(__file__))
+        self.pedfile = path + '/data/test.ped'
+        self.mapfile = path + '/data/test.map'
         self.encoder = {'snp1':'A/C','snp2':'A/C','snp3':'C/A','snp4':'T/G','snp5':'C/A'}
         self.PED = PED(self.pedfile, self.mapfile, encoder = self.encoder)
 

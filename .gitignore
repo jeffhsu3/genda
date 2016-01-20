@@ -11,6 +11,7 @@
 *.out
 *.c
 *.o
+*.so
 *.ipynb
 
 #OpenSNP data
@@ -20,3 +21,4 @@ user*.txt
 /doc/build
 
 tests/data/chrY.1000.vcf
+*egg-info/
