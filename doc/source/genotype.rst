@@ -4,7 +4,8 @@ Genotype
 
 chi2_association
 ----------------
-    Uses the chi-squared statistic to determine the likelihood that each SNP determines a certain trait. `Example <http://nbviewer.ipython.org/be0590cd0cb37cc58a96>`_.
+    Uses the chi-squared statistic to determine the likelihood that each 
+    SNP determines a certain trait. `Example <http://nbviewer.ipython.org/be0590cd0cb37cc58a96>`_.
 
     chi2_association(control, case, excludeNan = True)
         parameters:

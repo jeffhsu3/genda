@@ -4,11 +4,18 @@ import requests
 from bx.intervals.intersection import Intersecter, Interval
 
 
-
 def pairwise(iterable):
     a, b = tee(iterable)
     next(b, None)
     return(izip(a,b))
+
+
+class DiffEvent(object):
+    """A differential splicing event
+    """
+
+    def __init__(self, event_type):
+        self.event_type = event_type
 
 
 class Exon(object):
@@ -22,7 +29,6 @@ class Exon(object):
             self.end = int(end)
         except ValueError:
             print("Start and End positions need to be integers")
-
 
 
 def get_transcript_ids(gene):
@@ -210,7 +216,8 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
 
 
 def pairwise_transcript_comparison(transcript_dict):
-    """ Returns pairwise transcripts where there are skipped exons
+    """ Returns pairwise transcripts where there are skipped exons and the 
+    exon that is skipped.
     """
     skipped_exons_out = []
     for key1, key2 in pairwise(transcript_dict.keys()):
@@ -219,5 +226,3 @@ def pairwise_transcript_comparison(transcript_dict):
         if len(skipped_exons) >=1:
             skipped_exons_out.append((key1, key2))
     return(skipped_exons_out)
-
-

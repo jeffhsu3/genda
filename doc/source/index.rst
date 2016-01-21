@@ -23,6 +23,7 @@ Contents:
    related_software
    export_data_to_r
    vcf
+   transcript
    aei
    snp_array
    ped
