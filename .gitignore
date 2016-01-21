@@ -18,6 +18,8 @@
 #OpenSNP data
 user*.txt
 
+config.cfg
+
 /build
 /doc/build
 /dist
