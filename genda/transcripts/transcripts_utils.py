@@ -11,17 +11,32 @@ def pairwise(iterable):
 
 
 class DiffEvent(object):
-    """A differential splicing event
+    """A differential splicing event between
+    two transcripts
     """
 
-    def __init__(self, event_type):
+    def __init__(self, event_type, start, end,
+            transcript_ids, chrom):
         self.event_type = event_type
+        self.start = start
+        self.end = end
+        self.transcript_ids = transcript_ids
+        self.exon_num
+        self.chrom = chrom
+
+    def __repr__(self):
+        print((self.start, self.end))
+
+
+    def __eq__(self, other):
+        if self.start == other.start and\
+                self.end == other.end and\
+
 
 
 class Exon(object):
     """ A region
     """
-
     def __init__(self, region, start, end):
         self.region = region
         try:
@@ -134,6 +149,7 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
     values being a list of exons
 
     Returns
+    -------
     Exclusive Junctions - 
     5' upstream exons - 
     3' downstram exons - 
@@ -216,13 +232,13 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
 
 
 def pairwise_transcript_comparison(transcript_dict):
-    """ Returns pairwise transcripts where there are skipped exons and the 
-    exon that is skipped.
+    """ Returns pairwise transcripts where there are skipped exons 
+    and the exon that is skipped.
     """
     skipped_exons_out = []
     for key1, key2 in pairwise(transcript_dict.keys()):
         exclusive_juncs, to, me, skipped_exons = compare_two_transcripts(
                 key1, key2, transcript_dict)
         if len(skipped_exons) >=1:
-            skipped_exons_out.append((key1, key2))
+            skipped_exons_out.append((key1, key2, skipped_exons))
     return(skipped_exons_out)

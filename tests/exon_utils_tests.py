@@ -1,5 +1,5 @@
-"""
-Testing for overlap intervals
+
+"""Testing for overlap intervals
 """
 import unittest
 from genda.transcripts.exon_utils import calcOverlap, collideIntervals, \

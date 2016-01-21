@@ -10,8 +10,8 @@ Installing from source
 ~~~~~~~~~~~~~~~~~~~~~~
 
 The source is available from github::
-git clone https://github.com/jeffhsu3/genda.git
-python setup.py install
+    git clone https://github.com/jeffhsu3/genda.git;
+    python setup.py install
 
 Binary Installers
 ~~~~~~~~~~~~~~~~~
@@ -20,7 +20,7 @@ Work in progress
 
 Dependencies
 ~~~~~~~~~~~~
-* `python <http://www.python.org>`_
+* `python <http://www.python.org/>`_
 * `numpy <http://http://www.numpy.org/>`_
 * `cython <http://www.cython.org/>`_
 * `scipy <http://www.scipy.org/>`_

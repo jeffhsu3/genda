@@ -9,7 +9,7 @@ The SNP Array class
         parameters:
             zipfile - File with data in it. Will try gunzip, but if this fails, it will read it as plain text.
             
-            fileformat - Either 'one column' or 'two column' depending on wheter each individual's alleles are shown in one or two columsn. Defaults to 'one column'.
+            file_format - Either 'one column' or 'two column' depending on wheter each individual's alleles are shown in one or two columsn. Defaults to 'one column'.
             
             delim - What seperates the values in your data? Defaults to ',' but other common options are tabs ('\t') or spaces (' ').
             
