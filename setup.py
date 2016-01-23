@@ -16,6 +16,7 @@ except ImportError:
 else:
     use_cython = True
 
+
 cmdclass = {}
 ext_modules = []
 includes = pysam.get_include()

@@ -14,6 +14,7 @@ class Gene(object):
         self.start = start
         self.end = end
         self.transcripts = []
+        self.symbol = symbol
 
     
     def get_transcripts(self, gtf_tabix, 

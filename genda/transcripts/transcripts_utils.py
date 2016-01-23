@@ -13,15 +13,19 @@ def pairwise(iterable):
 class DiffEvent(object):
     """A differential splicing event between
     two transcripts
+
+    Arguments
+    ---------
     """
 
     def __init__(self, event_type, start, end,
-            transcript_ids, chrom):
+            transcript_ids, chrom=None, 
+            exon_num=None):
         self.event_type = event_type
         self.start = start
         self.end = end
         self.transcript_ids = transcript_ids
-        self.exon_num
+        self.exon_num = exon_num
         self.chrom = chrom
 
     def __repr__(self):
@@ -30,7 +34,10 @@ class DiffEvent(object):
 
     def __eq__(self, other):
         if self.start == other.start and\
-                self.end == other.end and\
+                (self.end == other.end):
+            return(True)
+        else:
+            return(False)
 
 
 
@@ -221,13 +228,20 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
     # Checking for skipped exons of t1 missing in t2
     hit_exon = [i[2][0] for i in exclusive_juncs] 
     hit_exon.extend([i[2][0] for i in matching_exons])
+    # :TODO check for end for transcript
+    end_position_s2 = max([i[1] for i in s2])
+
     for start, end, exon_n in s1:
         if exon_n <= start_of_exons:
             pass
         elif exon_n in hit_exon:
             pass
+        elif start > end_position_s2:
+            break
         else:
-            skipped_exons.append((start, end, (exon_n, None), (end-start)) ) 
+            diffevent = DiffEvent('skipped_exon', start, end,
+                    torder, exon_num = (exon_n, None))
+            skipped_exons.append(diffevent) 
     return(exclusive_juncs, torder, matching_exons, skipped_exons)
 
 
