@@ -1,7 +1,5 @@
 Transcripts
 ===========
 
-
-.. autofunction:: genda.transcript.pairwise_transcript_compairson
-
+.. autoclass:: genda.transcripts.gene.Gene
 
