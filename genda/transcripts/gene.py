@@ -4,13 +4,20 @@ from collections import defaultdict
 class Gene(object):
     """ A collection of transcripts
 
+    Arguments
+    ---------
+    gene - a unique identifier for the gene
+    chrom - chromosome identifier
+    start - start position of the gene
+    end - end position of the gene 
+    transcripts - a transcript class
     """
 
     def __init__(self, gene, chrom = None, start=0, end=3e8, 
             transcripts=[], strand=None, 
             symbol=None):
         self.gene = gene
-        self.chrom = chrom.encode('utf8')
+        self.chrom = str(chrom).encode('utf8')
         self.start = start
         self.end = end
         self.transcripts = []

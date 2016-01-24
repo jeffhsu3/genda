@@ -1,6 +1,7 @@
+import unittest
+import pysam
 from genda.transcripts import (Exon, Gene, Transcript, unique_sets,
         compare_two_transcripts)
-import unittest
 
 class TestGeneBreaks(unittest.TestCase):
 
@@ -24,6 +25,17 @@ class TestGeneBreaks(unittest.TestCase):
 
         """
         pass
+
+
+class TestGene(unittest.TestCase):
+
+    def setUp(self):
+        self.simple_gene = Gene('ENSG01', chrom=2, start=0, end=20,
+        symbol='HSU')
+
+    def test_get_transcript(self):    
+        gtf = 'bleh' # Need to generate a test gtf file
+
 
 
 class TestGenerateSets(unittest.TestCase):
@@ -56,12 +68,10 @@ class TestCompareTwoTranscripts(unittest.TestCase):
     def test_compare_transcripts_skipped_exon_simple(self):
         exclusive_juncs, torder, matching_exons, skipped_exons =\
                 compare_two_transcripts('t1', 't2', self.transcript_dict)
-        print(torder)
         se = skipped_exons[0]
         self.assertEqual((50, 60), (se.start, se.end))
         self.assertEqual('skipped_exon', se.event_type)
         self.assertEqual((2, None), se.exon_num)
-        #self.assertEqual([(50, 60, (2, None),  10),], skipped_exons)
         
 
 
