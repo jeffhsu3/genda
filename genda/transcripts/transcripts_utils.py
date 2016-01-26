@@ -16,6 +16,12 @@ class DiffEvent(object):
 
     Arguments
     ---------
+    event_type : ['skipped_exon', 'mxe', 'A5SE', 'ATS']
+    start : start position of differential event
+    end : end position of differential event
+    transcript_id : 
+    chrom : optional
+    exon_num : 
     """
 
     def __init__(self, event_type, start, end,
@@ -27,9 +33,10 @@ class DiffEvent(object):
         self.transcript_ids = transcript_ids
         self.exon_num = exon_num
         self.chrom = chrom
-
+    '''
     def __repr__(self):
-        print((self.start, self.end))
+        return(str(self.start) + '-' +  str(self.end))
+    '''
 
 
     def __eq__(self, other):
@@ -198,8 +205,7 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
         overlap = tree.find(int(start), int(end))
         if len(overlap) == 0:
             if start_of_exons:
-                skipped_exons.append((start, end, 
-                    (None, exon_n), (0,end-start)))
+                pass
             else: pass
         elif len(overlap) == 1:
             if start_of_exons: pass
@@ -251,8 +257,8 @@ def pairwise_transcript_comparison(transcript_dict):
     """
     skipped_exons_out = []
     for key1, key2 in pairwise(transcript_dict.keys()):
-        exclusive_juncs, to, me, skipped_exons = compare_two_transcripts(
+        _, _, _, skipped_exons = compare_two_transcripts(
                 key1, key2, transcript_dict)
         if len(skipped_exons) >=1:
-            skipped_exons_out.append((key1, key2, skipped_exons))
+            skipped_exons_out.append(skipped_exons)
     return(skipped_exons_out)

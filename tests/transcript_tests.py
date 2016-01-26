@@ -63,16 +63,26 @@ class TestCompareTwoTranscripts(unittest.TestCase):
                     (70, 90, 3),
                     (120, 180, 4),],
                 't2' : [(12, 20, 1), 
-                    (70, 90, 2)]
+                    (70, 90, 2)],
+                'no_overlap' : 
+                [(200,210, 1),
+                 (240, 260, 2)]
                 }
 
     def test_compare_transcripts_skipped_exon_simple(self):
         exclusive_juncs, torder, matching_exons, skipped_exons =\
                 compare_two_transcripts('t1', 't2', self.transcript_dict)
         se = skipped_exons[0]
+        self.assertEqual(len(skipped_exons), 1)
         self.assertEqual((50, 60), (se.start, se.end))
         self.assertEqual('skipped_exon', se.event_type)
         self.assertEqual((2, None), se.exon_num)
+
+    def test_no_overlap_compare_transcripts(self):
+        exclusive_juncs, torder, matching_exons, skipped_exons =\
+                compare_two_transcripts('t1', 'no_overlap', self.transcript_dict)
+        print(skipped_exons)
+        self.assertEqual(len(skipped_exons), 0)
         
 
 
