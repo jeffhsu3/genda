@@ -23,7 +23,6 @@ class Gene(object):
         self.transcripts = []
         self.symbol = symbol
 
-    
     def get_transcripts(self, gtf_tabix, 
             buffer = 500000):
         """
@@ -53,3 +52,21 @@ class Gene(object):
                         pass
                 else: pass
         self.transcripts = path_dict
+
+    def filter_transcripts(self, transcripts):
+        ''' Filter transcripts that are not in transcripts 
+
+        Arguments
+        ---------
+        transcripts : an iterator of transcripts that are to be kept
+        '''
+        if len(self.transcripts) == 0:
+            self.transcripts = []
+        else:
+            for key in self.transcripts.keys():
+                if key in transcripts:
+                    pass
+                else:
+                    del self.transcripts[key]
+
+

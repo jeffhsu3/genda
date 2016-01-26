@@ -33,11 +33,10 @@ class DiffEvent(object):
         self.transcript_ids = transcript_ids
         self.exon_num = exon_num
         self.chrom = chrom
-    '''
-    def __repr__(self):
-        return(str(self.start) + '-' +  str(self.end))
-    '''
 
+    def __repr__(self):
+        return(str(self.start) + '-' +  str(self.end) +\
+                ':' + str(self.exon_num))
 
     def __eq__(self, other):
         if self.start == other.start and\
@@ -57,10 +56,10 @@ class Exon(object):
             self.start = int(start)
             self.end = int(end)
         except ValueError:
-            print("Start and End positions need to be integers")
+            print("start and end positions need to be integers")
 
 
-def get_transcript_ids(gene):
+def get_transcript_ids(gene, gff=None):
     """ Get transcript ids from Ensembl REST api
     Returns a list of transcripts,
 
@@ -84,8 +83,6 @@ def get_transcript_ids(gene):
 class Transcript(object):
     """ A collection of exons
     """
-
-
     def __init__(self, exons=[]):
        self.exons = exons
 
@@ -137,16 +134,12 @@ def unique_sets(set_list):
         u_s = set(intersection)
         for t in u_s:
             pass
-
-
         set_list = [i]
     while len(rs) > 0:
         intersection = [t & i for i in set_list]
         out_sets.append(i)
 
     return(out_sets)
-
-
 
 
 
@@ -157,17 +150,17 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
 
     Parameters
     ----------
-    trans1 - string of transcript of interest
-    trans2 - string of second transcript of interest
-    transcript_dict - a dictionary of transcript names with 
+    trans1 : string of transcript of interest
+    trans2 : string of second transcript of interest
+    transcript_dict : a dictionary of transcript names with 
     values being a list of exons
 
     Returns
     -------
-    Exclusive Junctions - 
-    5' upstream exons - 
-    3' downstram exons - 
-    Skipped Exons -
+    Exclusive Junctions : 
+    5' upstream exons : 
+    3' downstram exons : 
+    Skipped Exons : Diffevent 
 
     """
     t1 = transcript_dict[trans1]
@@ -180,13 +173,13 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
         s1 = t2 
         s2 = t1
         reverse = True
+        s2_beg = min(starts1)
     else:
         s1 = t1
         s2 = t2
-    if reverse:
-        torder = (trans2, trans1)
-    else:
-        torder = (trans1, trans2)
+        s2_beg = min(starts2)
+    if reverse: torder = (trans2, trans1)
+    else: torder = (trans1, trans2)
     for i in s1:
         tree.add_interval(Interval(int(i[0]), int(i[1]), 
             value={'anno':i[2]}))
@@ -199,13 +192,18 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
     s2.sort(key=lambda x: x[2])
     max_exon_1 = max([i[2] for i in s1])
     max_exon_2 = max([i[2] for i in s2])
+    end_position_s2 = max([i[1] for i in s2])
+    s1_end = max([i[1] for i in s1])
     for start, end, exon_n in s2:
         start = int(start)
         end = int(end)
         overlap = tree.find(int(start), int(end))
         if len(overlap) == 0:
-            if start_of_exons:
-                pass
+            if start_of_exons and (start < s1_end):
+                skipped_exons.append(DiffEvent('skipped_exon', start, end,
+                        torder, exon_num = (None, exon_n)))
+            elif start > s1_end:
+                break
             else: pass
         elif len(overlap) == 1:
             if start_of_exons: pass
@@ -235,25 +233,27 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
     hit_exon = [i[2][0] for i in exclusive_juncs] 
     hit_exon.extend([i[2][0] for i in matching_exons])
     # :TODO check for end for transcript
-    end_position_s2 = max([i[1] for i in s2])
-
-    for start, end, exon_n in s1:
-        if exon_n <= start_of_exons:
-            pass
-        elif exon_n in hit_exon:
-            pass
-        elif start > end_position_s2:
-            break
-        else:
-            diffevent = DiffEvent('skipped_exon', start, end,
-                    torder, exon_num = (exon_n, None))
-            skipped_exons.append(diffevent) 
+    # Case where there is no overlap
+    if s2_beg > s1_end: pass
+    else:
+        for start, end, exon_n in s1:
+            if exon_n <= start_of_exons:
+                pass
+            elif exon_n in hit_exon:
+                pass
+            elif start > end_position_s2:
+                break
+            else:
+                diffevent = DiffEvent('skipped_exon', start, end,
+                        torder, exon_num = (exon_n, None))
+                skipped_exons.append(diffevent) 
     return(exclusive_juncs, torder, matching_exons, skipped_exons)
 
 
 def pairwise_transcript_comparison(transcript_dict):
     """ Returns pairwise transcripts where there are skipped exons 
     and the exon that is skipped.
+    :TODO add this to the gene class?
     """
     skipped_exons_out = []
     for key1, key2 in pairwise(transcript_dict.keys()):

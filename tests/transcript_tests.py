@@ -54,9 +54,11 @@ class TestGenerateSets(unittest.TestCase):
 
 
 class TestCompareTwoTranscripts(unittest.TestCase):
-    """:TODO add more test cases
+    """:TODO add more test cases.  Bad implementation
+    if I have to test so many edgecases
     """
     def setUp(self):
+        self.skipped_exon = (50, 60)
         self.transcript_dict = {
                 't1' : [(10, 20, 1), 
                     (50, 60, 2), 
@@ -68,11 +70,22 @@ class TestCompareTwoTranscripts(unittest.TestCase):
                 [(200,210, 1),
                  (240, 260, 2)]
                 }
+        
+        self.tdict2 = {'t1' : 
+                [(12, 20, 1), 
+                 (50, 60, 2), 
+                 (70, 90, 3),],
+                't2' : 
+                [(10, 20, 1), 
+                 (70, 90, 2)],
+
+                }
 
     def test_compare_transcripts_skipped_exon_simple(self):
         exclusive_juncs, torder, matching_exons, skipped_exons =\
                 compare_two_transcripts('t1', 't2', self.transcript_dict)
         se = skipped_exons[0]
+        self.assertEqual(se.transcript_ids, ('t1', 't2'))
         self.assertEqual(len(skipped_exons), 1)
         self.assertEqual((50, 60), (se.start, se.end))
         self.assertEqual('skipped_exon', se.event_type)
@@ -81,8 +94,14 @@ class TestCompareTwoTranscripts(unittest.TestCase):
     def test_no_overlap_compare_transcripts(self):
         exclusive_juncs, torder, matching_exons, skipped_exons =\
                 compare_two_transcripts('t1', 'no_overlap', self.transcript_dict)
-        print(skipped_exons)
         self.assertEqual(len(skipped_exons), 0)
+
+
+    def test_s2_has_skipped_exon(self):
+        exclusive_juncs, torder, matching_exons, skipped_exons =\
+                compare_two_transcripts('t1', 't2', self.tdict2)
+        self.assertEqual(len(skipped_exons), 1)
+
         
 
 
