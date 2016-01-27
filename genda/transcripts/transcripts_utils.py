@@ -195,15 +195,15 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
     starts1 = [i[0] for i in t1]
     starts2 = [i[0] for i in t2]
     reverse = False
-    if min(starts1) >= min(starts2):
+    if min(starts1) <= min(starts2):
+        s1 = t1
+        s2 = t2
+        s2_beg = min(starts2)
+    else:
         s1 = t2 
         s2 = t1
         reverse = True
         s2_beg = min(starts1)
-    else:
-        s1 = t1
-        s2 = t2
-        s2_beg = min(starts2)
     if reverse: torder = (trans2, trans1)
     else: torder = (trans1, trans2)
     for i in s1:
@@ -212,7 +212,6 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
     matching_exons = []
     exclusive_juncs = []
     skipped_exons = []
-    TS = []
     # Perform the query
     start_of_exons = None
     s1.sort(key=lambda x: x[0])
@@ -228,19 +227,16 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
         overlap = tree.find(int(start), int(end))
         if len(overlap) == 0:
             if start_of_exons and (start < s1_end):
-                try:
-                    pint = s2[pcurr-1][0:2]
-                    nint = s2[pcurr + 1][0:2]
-                    c1 = max([start - pint[1], start-nint[1]])
-                    c2 = max([nint[0]-end, pint[0] - end])
-                    cigar = [(3, c1), 
-                            (0, end-start), 
-                            (3, c2)]
-                    # :TODO handle multiple skips
-                    skipped_exons.append(DiffEvent('skipped_exon', start, end,
-                            torder, cigar=cigar, exon_num = (None, exon_n)))
-                except IndexError:
-                    pass
+                pint = s2[pcurr-1][0:2]
+                nint = s2[pcurr + 1][0:2]
+                c1 = max([start - pint[1], start-nint[1]])
+                c2 = max([nint[0]-end, pint[0] - end])
+                cigar = [(3, c1), 
+                        (0, end-start), 
+                        (3, c2)]
+                # :TODO handle multiple skips
+                skipped_exons.append(DiffEvent('skipped_exon', start, end,
+                        torder, cigar=cigar, exon_num = (None, exon_n)))
             elif start > s1_end:
                 break
             else: pass
@@ -267,7 +263,7 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
                 pass
             else: start_of_exons = overlap[0].value['anno']
         pcurr += 1
-    # Checking for skipped exons of t1 missing in t2
+    # Exons in s1 that are hit
     hit_exon = [i[2][0] for i in exclusive_juncs] 
     hit_exon.extend([i[2][0] for i in matching_exons])
     # Case where there is no overlap
@@ -279,16 +275,17 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
             elif exon_n in hit_exon: pass
             elif start > end_position_s2: break
             else:
-                pint = (s1[pcurr-1][0], s1[pcurr - 1][1])
-                nint = (s1[pcurr + 1][0], s1[pcurr + 1][1])
-                cigar = [(3, max([start - pint[1], start-nint[1]])), 
+                pint = s1[pcurr - 1][0:2]
+                nint = s1[pcurr + 1][0:2]
+                c1 = max([start - pint[1], start- nint[1]])
+                c2 = max([nint[0]-end, pint[0] - end])
+                cigar = [(3, c1), 
                         (0, end-start), 
-                        (3, max([nint[0]-end, pint[0] - end]))]
-                print(cigar)
+                        (3, c2)]
                 diffevent = DiffEvent('skipped_exon', start, end,
                         torder, cigar = cigar, exon_num = (exon_n, None))
                 skipped_exons.append(diffevent) 
-        pcurr += 1
+            pcurr += 1
     return(exclusive_juncs, torder, matching_exons, skipped_exons)
 
 
