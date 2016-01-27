@@ -36,6 +36,7 @@ class Gene(object):
         pls = gtf_tabix.fetch(self.chrom, self.start - buffer,
                 self.end + buffer)
         path_dict = defaultdict(list)
+        # Convert to numba or cython
         for i in pls:
             i = i.split("\t")
             geni = i[9].split(";")
@@ -68,5 +69,8 @@ class Gene(object):
                     pass
                 else:
                     del self.transcripts[key]
+
+    def get_common_parts(self):
+        raise NotImplementedError
 
 
