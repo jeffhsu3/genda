@@ -85,13 +85,15 @@ class TestCompareTwoTranscripts(unittest.TestCase):
         self.tnegative = {
                 }
 
+        self.diffmatch = None
+
     def test_compare_transcripts_skipped_exon_simple(self):
         exclusive_juncs, torder, matching_exons, skipped_exons =\
                 compare_two_transcripts('t1', 't2', self.transcript_dict)
         se = skipped_exons[0]
         self.assertEqual(len(skipped_exons), 1)
         self.assertEqual(se.transcript_ids, ('t1', 't2'))
-        self.assertEqual([(3, 30), (0, 10), (3, 10)], se.cigar)
+        self.assertEqual([(3, 30), (0, 10), (3, 10)], se.cigar2)
         self.assertEqual((50, 60), (se.start, se.end))
         self.assertEqual('skipped_exon', se.event_type)
         self.assertEqual((2, None), se.exon_num)
@@ -101,11 +103,18 @@ class TestCompareTwoTranscripts(unittest.TestCase):
                 compare_two_transcripts('t1', 'no_overlap', self.transcript_dict)
         self.assertEqual(len(skipped_exons), 0)
 
-
     def test_s2_has_skipped_exon(self):
         exclusive_juncs, torder, matching_exons, skipped_exons =\
                 compare_two_transcripts('t1', 't2', self.tdict2)
         self.assertEqual(len(skipped_exons), 1)
+        se = skipped_exons[0]
+        self.assertEqual(se.transcript_ids, ('t2', 't1'))
+        self.assertEqual(skipped_exons[0].cigar1,  [(3, 50)])
+        self.assertEqual(skipped_exons[0].cigar2,  [(3, 30), (0, 10), (3, 10)]) 
+
+
+    def test_two_skipped_exons(self):
+        pass
 
         
 
