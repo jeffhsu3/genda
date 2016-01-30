@@ -97,6 +97,7 @@ class TestCompareTwoTranscripts(unittest.TestCase):
         self.assertEqual((50, 60), (se.start, se.end))
         self.assertEqual('skipped_exon', se.event_type)
         self.assertEqual((2, None), se.exon_num)
+        self.assertEqual((1, 2), se.exon2)
 
     def test_no_overlap_compare_transcripts(self):
         exclusive_juncs, torder, matching_exons, skipped_exons =\
@@ -111,6 +112,7 @@ class TestCompareTwoTranscripts(unittest.TestCase):
         self.assertEqual(se.transcript_ids, ('t2', 't1'))
         self.assertEqual(skipped_exons[0].cigar1,  [(3, 50)])
         self.assertEqual(skipped_exons[0].cigar2,  [(3, 30), (0, 10), (3, 10)]) 
+        self.assertEqual((1,2), se.exon2)
 
 
     def test_two_skipped_exons(self):

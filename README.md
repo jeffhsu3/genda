@@ -1,3 +1,8 @@
+[![Build Status](https://travis-ci.org/jeffhsu3/genda.png)](https://travis-ci.org/jeffhsu3/genda)
+
+=============
+Documentation, along with tutorials, can be found [here](http://pyseq.rtfd.org).
+
 What is genda?
 ==============
 genda is still very much in development and should not be used by others
@@ -10,11 +15,16 @@ tools built into it that allow the user to perform association tests,
 heirarchical clustering, etc.
 
 
+Documentation
+=============
+Documentation, along with tutorials, can be found [here](http://pyseq.rtfd.org).
+
 
 Installation
 ============
 
     python setup.py install
+    :TODO conda
 
 
 Allelic Expression Imbalance
@@ -22,18 +32,15 @@ Allelic Expression Imbalance
 ![AEI](./doc/source/images/example_aei.png?raw=true, "AEI Example")
 
 
-Documentation
-=============
-Documentation, along with tutorials, can be found [here](http://pyseq.rtfd.org).
 
 External Library Requirments:
 =============================
-    - [numpy] (http://http://www.numpy.org/)
-    - [pandas] (http://pandas.pydata.org/)
-    - [matplotlib] (http://matplotlib.org/)
-    - [scipy] (http://www.scipy.org/)
-    - [cython] (http://www.cython.org/)
-    - [bx-python] (https://bitbucket.org/james_taylor/bx-python/wiki/Home)
-    - [statsmodels] (http://statsmodels.sourceforge.net/)
-    - [scikit-learn] (http://scikit-learn.org/stable/)
-    - [pysam] (https://code.google.com/p/pysam/)
+    - [numpy](http://http://www.numpy.org/)
+    - [pandas](http://pandas.pydata.org/)
+    - [matplotlib](http://matplotlib.org/)
+    - [scipy](http://www.scipy.org/)
+    - [cython](http://www.cython.org/)
+    - [bx-python](https://bitbucket.org/james_taylor/bx-python/wiki/Home)
+    - [statsmodels](http://statsmodels.sourceforge.net/)
+    - [scikit-learn](http://scikit-learn.org/stable/)
+    - [pysam](https://code.google.com/p/pysam/)
