@@ -29,6 +29,7 @@ Contents:
    ped
    genotype
    tutorials
+   notebook
 
 
 
