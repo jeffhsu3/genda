@@ -37,7 +37,6 @@ class DiffEvent(object):
     cigar2 : the cigar tuple generated across the other transcript
     event
     """
-
     def __init__(self, event_type, start, end,
             transcript_ids, cigar1=None, cigar2=None, 
             chrom=None, 
@@ -47,6 +46,7 @@ class DiffEvent(object):
         self.start = start
         self.end = end
         # Change to list
+        # Make this less chunky
         self.transcript_ids = transcript_ids
         self.exon_num = exon_num
         self.chrom = chrom
@@ -65,19 +65,24 @@ class DiffEvent(object):
         else:
             return(False)
 
-    def _extend(self, new_diff_event):
+    def _extend(self, new_cigar, cig=1):
         """Extends a diffevent for example
         a mutual exclusive exon or two skipped
         exons and other complex events
         """
-        self.cigar = new_cigar
-        raise NotImplementedError
+        old_cig = getattr(self, 'cigar{0!s}'.format(cig)) 
+        old_cig.extend(new_cigar)
+        setattr(self, 'cigar{0!s}'.format(cig), old_cig)
 
     def add_transcript(self, transcripts=[]):
         """ Add other transcript pairs that share 
         the same differential event
         """
 
+        raise NotImplementedError
+
+
+    def cig_to_string(self):
         raise NotImplementedError
 
 
@@ -172,11 +177,6 @@ def transcript_order():
     """
     pass
 
-def _MXE():
-    """
-    """
-    pass
-
 
 def _get_by_exonn(exon_n, transcript):
     for i, j in enumerate(transcript):
@@ -184,20 +184,24 @@ def _get_by_exonn(exon_n, transcript):
             return(i)
     else: pass
 
-def _generate_cigar(transcript, current):
-    pint = transcript[current - 1][0:2]  
-    start, end = transcript[current][0:2]
-    #:TODO refactor this
-    try:
-        nint = transcript[current + 1][0:2]
-        c1 = max(start-pint[1], 
-            start-nint[1])
-        c2 = max(nint[0] - end,
-                pint[0] - end)
-        return([(3, c1), (0, end-start), (3, c2)])
-    except IndexError:
-        c1 = start-pint[1]
-        return([(3, c1), (0, end-start)])
+def _generate_cigar(transcript, current, mskip=1):
+    out = []
+    for i in reversed(range(mskip)):
+        pint = transcript[current - 1 - i][0:2]  
+        start, end = transcript[current  - i][0:2]
+        #:TODO refactor this
+        try:
+            nint = transcript[current + 1 - i][0:2]
+            c1 = max(start-pint[1], 
+                start-nint[1])
+            c2 = max(nint[0] - end,
+                    pint[0] - end)
+            out.extend([(3, c1), (0, end-start), (3, c2)])
+        except IndexError:
+            print('waaaah')
+            c1 = start-pint[1]
+            out.extend(([(3, c1), (0, end-start)]))
+    return(out)
 
 def compare_two_transcripts(trans1, trans2, transcript_dict):
     """
@@ -253,28 +257,32 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
     #end_position_s2 = max([i[1] for i in s2])
     s1_end = max([i[1] for i in s1])
     prev_match = None
-    pcurr = 0 # Need this since no gurantee transcript starts at exon1 
-    for start, end, exon_n in s2:
+    mskip_counter = 1
+    for pcurr in range(len(s2)):
+        start, end, exon_n = s2[pcurr]
         overlap = tree.find(int(start), int(end))
         if len(overlap) == 0:
             if prev_match and (start < s1_end):
-                cigar = _generate_cigar(s2, pcurr)
-                # Need to use while statment here
-                if exon_match[exon_n-1] == prev_match.value['anno']:
-                    try:
-                        # nm - next match
-                        nm = tree.find(*s2[pcurr + 1][0:2])[0]
-                        ocigar = [(3, nm.start - prev_match.end)]
-                        nexon = nm.value['anno']
-                    except IndexError:
-                        nm = s1[_get_by_exonn(prev_match.value['anno']+1,s1)] 
-                        ocigar = [(3,nm[0] - prev_match.end)]
-                        nexon = nm[2]
-                # :TODO handle multiple skips
-                skipped_exons.append(DiffEvent('skipped_exon', start, end,
-                        torder, cigar2=cigar, cigar1 = ocigar, 
-                        exon_num = (None, exon_n), 
-                        exon2=(prev_match.value['anno'], nexon)))
+                cigar = _generate_cigar(s2, pcurr, mskip=mskip_counter)
+                try:
+                    if exon_match[exon_n-1] == prev_match.value['anno']:
+                        try:
+                            nm = tree.find(*s2[pcurr + 1][0:2])[0]
+                            ocigar = [(3, nm.start - prev_match.end)]
+                            nexon = nm.value['anno']
+                        except IndexError:
+                            nm = s1[_get_by_exonn(prev_match.value['anno']+1,s1)] 
+                            ocigar = [(3,nm[0] - prev_match.end)]
+                            nexon = nm[2]
+                    skipped_exons.append(DiffEvent('skipped_exon', start, end,
+                            torder, cigar2=cigar, cigar1 = ocigar, 
+                            exon_num = (None, exon_n), 
+                            exon2=(prev_match.value['anno'], nexon)))
+                    mskip_counter = 1
+                    # :TODO handle multiple skips
+                except KeyError:
+                    mskip_counter += 1
+                    continue
             elif start > s1_end: break
             else: pass
         elif len(overlap) == 1:
@@ -318,7 +326,6 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
             if start_of_exons:
                 pass
             else: start_of_exons = overlap[0].value['anno']
-        pcurr += 1
     # Exons in s1 that are hit
     hit_exon = [i[2][0] for i in exclusive_juncs] 
     hit_exon.extend([i[2][0] for i in matching_exons])

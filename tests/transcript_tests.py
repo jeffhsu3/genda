@@ -27,14 +27,6 @@ class TestGeneBreaks(unittest.TestCase):
         pass
 
 
-class TestGene(unittest.TestCase):
-
-    def setUp(self):
-        self.simple_gene = Gene('ENSG01', chrom=2, start=0, end=20,
-        symbol='HSU')
-
-    def test_get_transcript(self):    
-        gtf = 'bleh' # Need to generate a test gtf file
 
 
 
@@ -84,7 +76,14 @@ class TestCompareTwoTranscripts(unittest.TestCase):
 
         self.tnegative = {
                 }
-
+        self.doubleskip = {'full':
+                [(12, 20, 1),
+                 (30, 40, 2),
+                 (50, 60, 3),
+                 (70, 80, 4)],
+                'skipped':
+                [(5, 20, 1),
+                 (70, 80, 2)]}
         self.diffmatch = None
 
     def test_compare_transcripts_skipped_exon_simple(self):
@@ -116,7 +115,11 @@ class TestCompareTwoTranscripts(unittest.TestCase):
 
 
     def test_two_skipped_exons(self):
-        pass
+        exclusive_juncs, torder, matching_exons, skipped_exons =\
+                compare_two_transcripts('full', 'skipped', self.doubleskip)
+        se = skipped_exons[0]
+        self.assertEqual(se.cigar1, [(3, 50)])
+        
 
         
 
