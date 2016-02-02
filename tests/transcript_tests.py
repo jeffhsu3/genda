@@ -87,6 +87,7 @@ class TestCompareTwoTranscripts(unittest.TestCase):
         self.diffmatch = None
 
     def test_compare_transcripts_skipped_exon_simple(self):
+        # :TODO write permutation 
         exclusive_juncs, torder, matching_exons, skipped_exons =\
                 compare_two_transcripts('t1', 't2', self.transcript_dict)
         se = skipped_exons[0]
@@ -118,7 +119,15 @@ class TestCompareTwoTranscripts(unittest.TestCase):
         exclusive_juncs, torder, matching_exons, skipped_exons =\
                 compare_two_transcripts('full', 'skipped', self.doubleskip)
         se = skipped_exons[0]
+        from IPython import embed
+        embed()
         self.assertEqual(se.cigar1, [(3, 50)])
+        self.assertEqual(se.cigar2, [(3,10), (0,10), (3,10), (0,10), (3,10)])
+        self.doubleskip['full'][0][0] = 5
+        exclusive_juncs, torder, matching_exons, skipped_exons =\
+                compare_two_transcripts('full', 'skipped', self.doubleskip)
+        self.assertEqual(se.cigar1, [(3,10), (0,10), (3,10), (0,10), (3,10)])
+        self.assertEqual(se.cigar2, [(3, 50)])
         
 
         

@@ -296,10 +296,11 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
                     if prev_match.value['anno']  == s1_exon_n - 1: 
                         pass
                     elif prev_match.value['anno'] < s1_exon_n - 1:
-                        # Change API
+                        mskip = s1_exon_n - prev_match.value['anno']  
+                        print(mskip)
                         narg = _get_by_exonn(prev_match.value['anno']+1,s1) 
                         s_s1 = s1[narg] # skipped s1
-                        cigar = _generate_cigar(s1, narg)
+                        cigar = _generate_cigar(s1, narg, mskip=mskip)
                         ocigar = (3, start - s2[pcurr-1][0])
                         skipped_exons.append(DiffEvent('skipped_exon', 
                             s_s1[0], s_s1[1], torder, cigar2=cigar, cigar1 = ocigar, 
@@ -326,9 +327,6 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
             if start_of_exons:
                 pass
             else: start_of_exons = overlap[0].value['anno']
-    # Exons in s1 that are hit
-    hit_exon = [i[2][0] for i in exclusive_juncs] 
-    hit_exon.extend([i[2][0] for i in matching_exons])
     return(exclusive_juncs, torder, matching_exons, skipped_exons)
 
 def pairwise_transcript_comparison(transcript_dict):
