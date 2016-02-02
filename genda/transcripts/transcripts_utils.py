@@ -186,19 +186,21 @@ def _get_by_exonn(exon_n, transcript):
 
 def _generate_cigar(transcript, current, mskip=1):
     out = []
-    for i in reversed(range(mskip)):
-        pint = transcript[current - 1 - i][0:2]  
-        start, end = transcript[current  - i][0:2]
+    for i in (range(mskip)):
+        pint = transcript[current - 1 + i][0:2]  
+        start, end = transcript[current + i][0:2]
         #:TODO refactor this
         try:
-            nint = transcript[current + 1 - i][0:2]
+            nint = transcript[current + 1 + i][0:2]
             c1 = max(start-pint[1], 
                 start-nint[1])
             c2 = max(nint[0] - end,
                     pint[0] - end)
-            out.extend([(3, c1), (0, end-start), (3, c2)])
+            if i >= 1:
+                out.extend([(0, end-start), (3, c2)])
+            else:
+                out.extend([(3, c1), (0, end-start), (3, c2)])
         except IndexError:
-            print('waaaah')
             c1 = start-pint[1]
             out.extend(([(3, c1), (0, end-start)]))
     return(out)
@@ -263,7 +265,7 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
         overlap = tree.find(int(start), int(end))
         if len(overlap) == 0:
             if prev_match and (start < s1_end):
-                cigar = _generate_cigar(s2, pcurr, mskip=mskip_counter)
+                cigar = _generate_cigar(s2, pcurr, mskip=1)
                 try:
                     if exon_match[exon_n-1] == prev_match.value['anno']:
                         try:
@@ -278,11 +280,10 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
                             torder, cigar2=cigar, cigar1 = ocigar, 
                             exon_num = (None, exon_n), 
                             exon2=(prev_match.value['anno'], nexon)))
-                    mskip_counter = 1
                     # :TODO handle multiple skips
                 except KeyError:
-                    mskip_counter += 1
-                    continue
+                    ncig = _generate_cigar(s2, pcurr, mskip=1)[1:]
+                    skipped_exons[-1]._extend(ncig, cig=2)
             elif start > s1_end: break
             else: pass
         elif len(overlap) == 1:
@@ -295,15 +296,17 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
                 if prev_match:
                     if prev_match.value['anno']  == s1_exon_n - 1: 
                         pass
-                    elif prev_match.value['anno'] < s1_exon_n - 1:
-                        mskip = s1_exon_n - prev_match.value['anno']  
-                        print(mskip)
+                    #elif prev_match.value['anno'] < s1_exon_n - 1:
+                    else:
+                        mskip = s1_exon_n - prev_match.value['anno'] - 1  
                         narg = _get_by_exonn(prev_match.value['anno']+1,s1) 
                         s_s1 = s1[narg] # skipped s1
                         cigar = _generate_cigar(s1, narg, mskip=mskip)
-                        ocigar = (3, start - s2[pcurr-1][0])
+                        ocigar = [(3, start - s2[pcurr-1][1])]
+                        # Remove previous one
                         skipped_exons.append(DiffEvent('skipped_exon', 
-                            s_s1[0], s_s1[1], torder, cigar2=cigar, cigar1 = ocigar, 
+                            s_s1[0], s_s1[1], torder, cigar2 = ocigar, cigar1 =
+                            cigar, 
                             exon_num = (s_s1[2], None), 
                             exon2 = (exon_n-1, exon_n)))
                 prev_match = overlap[0]

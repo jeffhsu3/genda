@@ -52,15 +52,15 @@ class TestCompareTwoTranscripts(unittest.TestCase):
     def setUp(self):
         self.skipped_exon = (50, 60)
         self.transcript_dict = {
-                't1' : [
-                    (10, 20, 1), 
+                't1' : 
+                [   (10, 20, 1), 
                     (50, 60, 2), #Skipped exon 
                     (70, 90, 3),
                     (120, 180, 4),],
                 't2' : [(12, 20, 1), 
                     (70, 90, 2)],
                 'no_overlap' : 
-                [(200,210, 1),
+                [(200, 210, 1),
                  (240, 260, 2)]
                 }
         
@@ -76,6 +76,7 @@ class TestCompareTwoTranscripts(unittest.TestCase):
 
         self.tnegative = {
                 }
+
         self.doubleskip = {'full':
                 [(12, 20, 1),
                  (30, 40, 2),
@@ -84,7 +85,6 @@ class TestCompareTwoTranscripts(unittest.TestCase):
                 'skipped':
                 [(5, 20, 1),
                  (70, 80, 2)]}
-        self.diffmatch = None
 
     def test_compare_transcripts_skipped_exon_simple(self):
         # :TODO write permutation 
@@ -93,7 +93,7 @@ class TestCompareTwoTranscripts(unittest.TestCase):
         se = skipped_exons[0]
         self.assertEqual(len(skipped_exons), 1)
         self.assertEqual(se.transcript_ids, ('t1', 't2'))
-        self.assertEqual([(3, 30), (0, 10), (3, 10)], se.cigar2)
+        self.assertEqual([(3, 30), (0, 10), (3, 10)], se.cigar1)
         self.assertEqual((50, 60), (se.start, se.end))
         self.assertEqual('skipped_exon', se.event_type)
         self.assertEqual((2, None), se.exon_num)
@@ -119,13 +119,13 @@ class TestCompareTwoTranscripts(unittest.TestCase):
         exclusive_juncs, torder, matching_exons, skipped_exons =\
                 compare_two_transcripts('full', 'skipped', self.doubleskip)
         se = skipped_exons[0]
-        from IPython import embed
-        embed()
         self.assertEqual(se.cigar1, [(3, 50)])
         self.assertEqual(se.cigar2, [(3,10), (0,10), (3,10), (0,10), (3,10)])
-        self.doubleskip['full'][0][0] = 5
+
+        self.doubleskip['full'][0] = (4, 20, 1)
         exclusive_juncs, torder, matching_exons, skipped_exons =\
                 compare_two_transcripts('full', 'skipped', self.doubleskip)
+        se = skipped_exons[0]
         self.assertEqual(se.cigar1, [(3,10), (0,10), (3,10), (0,10), (3,10)])
         self.assertEqual(se.cigar2, [(3, 50)])
         
