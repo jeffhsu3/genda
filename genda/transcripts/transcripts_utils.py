@@ -10,15 +10,34 @@ def pairwise(iterable):
     return(izip(a,b))
 
 
+
 class EventCollection(object):
     """ A collection of diffevents
 
     Arguments
     ---------
     """
+    equivalent_events = {
+            'SE' : 'skipped_exon',
+            '' : ''
+            }
 
-    def __init__(self, events=[]):
+    def __init__(self, events):
         self.events = events
+
+    def __getitem__(self, key):
+        return(self.events[key])
+
+    def __len__(self):
+        return(len(self.events))
+
+    def filter(self, event_type):
+        out_events = []
+        for i in self.events:
+            if i.event_type == event_type:
+                out_events.append(i)
+        return(out_events)
+
 
 
 class DiffEvent(object):
@@ -86,6 +105,13 @@ class DiffEvent(object):
         raise NotImplementedError
 
 
+    def calc_size_norm(self):
+        """ Calculate rough normalization factor
+        """
+        if self.event_type == 'skipped_exon':
+            return()
+
+
 
 class Exon(object):
     """ A region
@@ -103,9 +129,19 @@ def get_transcript_ids(gene, gff=None):
     """ Get transcript ids from Ensembl REST api
     Returns a list of transcripts,
 
+    Arguments
+    ---------
+    gene - Ensembl gene ID
+    gff - pysam.Tabixfile
+
     :TODO make out_transcripts a list of transcript class
     :TODO try GTF first and except to Ensembl otherwise
     """
+
+    if gff:
+        pass
+
+
     server = "http://rest.ensembl.org"
     ext = "/lookup/id/{0}?species=homo_sapiens;expand=1"
     r = requests.get(server+ext.format(gene), headers={ "Content-Type" :
@@ -172,17 +208,12 @@ def unique_sets(set_list):
     return(out_sets)
 
 
-def transcript_order():
-    """
-    """
-    pass
-
 
 def _get_by_exonn(exon_n, transcript):
     for i, j in enumerate(transcript):
         if j[2] == exon_n:
             return(i)
-    else: pass
+        else: pass
 
 def _generate_cigar(transcript, current, mskip=1):
     out = []
@@ -201,6 +232,7 @@ def _generate_cigar(transcript, current, mskip=1):
             else:
                 out.extend([(3, c1), (0, end-start), (3, c2)])
         except IndexError:
+            # end
             c1 = start-pint[1]
             out.extend(([(3, c1), (0, end-start)]))
     return(out)
@@ -218,6 +250,7 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
     values being a list of exons
 
     :TODO make a better return
+    :TODO maybe include something similar to to_plot
     Returns
     -------
     Exclusive Junctions : 
@@ -252,6 +285,7 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
     # Perform the query
     exon_match = {}
     start_of_exons = None
+    # Sorted on starts, but maybe sort on exon number?
     s1.sort(key=lambda x: x[0])
     s2.sort(key=lambda x: x[0])
     max_exon_1 =  s1[-1][2]
@@ -300,6 +334,9 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
                     else:
                         mskip = s1_exon_n - prev_match.value['anno'] - 1  
                         narg = _get_by_exonn(prev_match.value['anno']+1,s1) 
+                        if narg == None:
+                            narg = _get_by_exonn(prev_match.value['anno'] - 1,
+                                    s1)
                         s_s1 = s1[narg] # skipped s1
                         cigar = _generate_cigar(s1, narg, mskip=mskip)
                         ocigar = [(3, start - s2[pcurr-1][1])]
@@ -330,6 +367,7 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
             if start_of_exons:
                 pass
             else: start_of_exons = overlap[0].value['anno']
+    skipped_exons = EventCollection(events=skipped_exons)
     return(exclusive_juncs, torder, matching_exons, skipped_exons)
 
 def pairwise_transcript_comparison(transcript_dict):

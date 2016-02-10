@@ -28,6 +28,8 @@ class TestGeneBreaks(unittest.TestCase):
 
 
 
+def switch_t1_t2():
+    pass
 
 
 
@@ -104,6 +106,16 @@ class TestCompareTwoTranscripts(unittest.TestCase):
                 compare_two_transcripts('t1', 'no_overlap', self.transcript_dict)
         self.assertEqual(len(skipped_exons), 0)
 
+
+    def test_reverse_compare_transcripts(self):
+        reverse_strand = self.transcript_dict
+        reverse_strand['t1'] = [(i[0], i[1], 4-i[2]) for i in reverse_strand['t1']]
+        reverse_strand['t2'] = [(i[0], i[1], 3-i[2]) for i in reverse_strand['t1']]
+        exclusive_juncs, torder, matching_exons, skipped_exons =\
+                compare_two_transcripts('t1', 't2', reverse_strand)
+        self.assertEqual(len(skipped_exons), 1)
+        
+    
     def test_s2_has_skipped_exon(self):
         exclusive_juncs, torder, matching_exons, skipped_exons =\
                 compare_two_transcripts('t1', 't2', self.tdict2)
@@ -122,12 +134,17 @@ class TestCompareTwoTranscripts(unittest.TestCase):
         self.assertEqual(se.cigar1, [(3, 50)])
         self.assertEqual(se.cigar2, [(3,10), (0,10), (3,10), (0,10), (3,10)])
 
+        # Test to switch ordering
         self.doubleskip['full'][0] = (4, 20, 1)
         exclusive_juncs, torder, matching_exons, skipped_exons =\
                 compare_two_transcripts('full', 'skipped', self.doubleskip)
         se = skipped_exons[0]
         self.assertEqual(se.cigar1, [(3,10), (0,10), (3,10), (0,10), (3,10)])
         self.assertEqual(se.cigar2, [(3, 50)])
+
+
+    def test_pairwise_compoare(self):
+        pass
         
 
         

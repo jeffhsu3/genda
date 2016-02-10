@@ -33,8 +33,12 @@ class Gene(object):
         ---------
         gtf_tabix - A pysam.Tabixfile gtf
         """
-        pls = gtf_tabix.fetch(self.chrom, self.start - buffer,
-                self.end + buffer)
+        try:
+            pls = gtf_tabix.fetch(self.chrom, self.start - buffer,
+                    self.end + buffer)
+        except ValueError:
+            pls = gtf_tabix.fetch(self.chrom, 0,
+                    self.end + buffer)
         path_dict = defaultdict(list)
         # Convert to numba or cython
         for i in pls:
