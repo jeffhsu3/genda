@@ -58,9 +58,12 @@ class TestCompareTwoTranscripts(unittest.TestCase):
                 [   (10, 20, 1), 
                     (50, 60, 2), #Skipped exon 
                     (70, 90, 3),
-                    (120, 180, 4),],
-                't2' : [(12, 20, 1), 
-                    (70, 90, 2)],
+                    (120, 180, 4),
+                ],
+                't2' : [
+                    (12, 20, 1), 
+                    (70, 90, 2)
+                ],
                 'no_overlap' : 
                 [(200, 210, 1),
                  (240, 260, 2)]
@@ -90,7 +93,7 @@ class TestCompareTwoTranscripts(unittest.TestCase):
 
     def test_compare_transcripts_skipped_exon_simple(self):
         # :TODO write permutation 
-        exclusive_juncs, torder, matching_exons, skipped_exons =\
+        matching_exons, skipped_exons =\
                 compare_two_transcripts('t1', 't2', self.transcript_dict)
         se = skipped_exons[0]
         self.assertEqual(len(skipped_exons), 1)
@@ -102,22 +105,22 @@ class TestCompareTwoTranscripts(unittest.TestCase):
         self.assertEqual((1, 2), se.exon2)
 
     def test_no_overlap_compare_transcripts(self):
-        exclusive_juncs, torder, matching_exons, skipped_exons =\
+        matching_exons, skipped_exons =\
                 compare_two_transcripts('t1', 'no_overlap', self.transcript_dict)
         self.assertEqual(len(skipped_exons), 0)
 
 
     def test_reverse_compare_transcripts(self):
         reverse_strand = self.transcript_dict
-        reverse_strand['t1'] = [(i[0], i[1], 4-i[2]) for i in reverse_strand['t1']]
-        reverse_strand['t2'] = [(i[0], i[1], 3-i[2]) for i in reverse_strand['t1']]
-        exclusive_juncs, torder, matching_exons, skipped_exons =\
+        reverse_strand['t1'] = [(i[0], i[1], 5-i[2]) for i in reverse_strand['t1']]
+        reverse_strand['t2'] = [(i[0], i[1], 4-i[2]) for i in reverse_strand['t2']]
+        matching_exons, skipped_exons =\
                 compare_two_transcripts('t1', 't2', reverse_strand)
         self.assertEqual(len(skipped_exons), 1)
         
     
     def test_s2_has_skipped_exon(self):
-        exclusive_juncs, torder, matching_exons, skipped_exons =\
+        matching_exons, skipped_exons =\
                 compare_two_transcripts('t1', 't2', self.tdict2)
         self.assertEqual(len(skipped_exons), 1)
         se = skipped_exons[0]
@@ -128,7 +131,7 @@ class TestCompareTwoTranscripts(unittest.TestCase):
 
 
     def test_two_skipped_exons(self):
-        exclusive_juncs, torder, matching_exons, skipped_exons =\
+        matching_exons, skipped_exons =\
                 compare_two_transcripts('full', 'skipped', self.doubleskip)
         se = skipped_exons[0]
         self.assertEqual(se.cigar1, [(3, 50)])
@@ -136,7 +139,7 @@ class TestCompareTwoTranscripts(unittest.TestCase):
 
         # Test to switch ordering
         self.doubleskip['full'][0] = (4, 20, 1)
-        exclusive_juncs, torder, matching_exons, skipped_exons =\
+        matching_exons, skipped_exons =\
                 compare_two_transcripts('full', 'skipped', self.doubleskip)
         se = skipped_exons[0]
         self.assertEqual(se.cigar1, [(3,10), (0,10), (3,10), (0,10), (3,10)])
@@ -146,6 +149,47 @@ class TestCompareTwoTranscripts(unittest.TestCase):
     def test_pairwise_compoare(self):
         pass
         
+
+class TestDiffEvent(unittest.TestCase):
+    def setUp(self):
+        self.skipped_exon = (50, 60)
+        self.transcript_dict = {
+                't1' : 
+                [   (10, 20, 1), 
+                    (50, 60, 2), #Skipped exon 
+                    (70, 90, 3),
+                    (120, 180, 4),
+                ],
+                't2' : [
+                    (12, 20, 1), 
+                    (70, 90, 2)
+                ],
+                'no_overlap' : 
+                [(200, 210, 1),
+                 (240, 260, 2)]
+                }
+        
+        self.tdict2 = {'t1' : 
+                [(12, 20, 1), 
+                 (50, 60, 2), 
+                 (70, 90, 3),],
+                't2' : 
+                [(10, 20, 1), 
+                 (70, 90, 2)],
+
+                }
+
+        self.tnegative = {
+                }
+
+        self.doubleskip = {'full':
+                [(12, 20, 1),
+                 (30, 40, 2),
+                 (50, 60, 3),
+                 (70, 80, 4)],
+                'skipped':
+                [(5, 20, 1),
+                 (70, 80, 2)]}
 
         
 

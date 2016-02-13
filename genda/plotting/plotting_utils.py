@@ -197,11 +197,18 @@ def plot_read(read, y_start, ax, height=1, ymax=30, scale=1e6):
         
 
 def coverage_hist(read, hist_array, start):
+    """ updates hist_array with coverage counts at a given position
+    # Move to cython
+    """
     ii = read.pos - start
     cont = 0
     for i, j in read.cigar:
         if i == 0:
-            hist_array[ii + cont:ii+cont+j] +=1
+            if ii + cont > 0:
+                hist_array[ii + cont:ii+cont+j] += 1
+            elif ii + cont + j > 0:
+                hist_array[0: ii + cont + j ] += 1
+            else: pass
             cont += j
         elif i==3:
             # cigar is always ordered
