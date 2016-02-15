@@ -52,6 +52,7 @@ class TestCompareTwoTranscripts(unittest.TestCase):
     if I have to test so many edgecases
     """
     def setUp(self):
+        # :TODO maybe load from gtf or ? 
         self.skipped_exon = (50, 60)
         self.transcript_dict = {
                 't1' : 
@@ -60,14 +61,24 @@ class TestCompareTwoTranscripts(unittest.TestCase):
                     (70, 90, 3),
                     (120, 180, 4),
                 ],
+
                 't2' : [
                     (12, 20, 1), 
                     (70, 90, 2)
                 ],
+
                 'no_overlap' : 
                 [(200, 210, 1),
-                 (240, 260, 2)]
-                }
+                 (240, 260, 2)],
+
+                'total_diff_start' :
+                [(1, 3, 1),
+                 (5, 8, 2),
+                 (20, 50, 3),
+                 (200, 210, 4),
+                 (240, 260, 5),
+                ],
+        }
         
         self.tdict2 = {'t1' : 
                 [(12, 20, 1), 
@@ -79,8 +90,6 @@ class TestCompareTwoTranscripts(unittest.TestCase):
 
                 }
 
-        self.tnegative = {
-                }
 
         self.doubleskip = {'full':
                 [(12, 20, 1),
@@ -90,6 +99,14 @@ class TestCompareTwoTranscripts(unittest.TestCase):
                 'skipped':
                 [(5, 20, 1),
                  (70, 80, 2)]}
+
+
+    def test_alternate_start_site(self):
+        matching_exons, skipped_exons =\
+                compare_two_transcripts('no_overlap', 'total_diff_start',
+                        self.transcript_dict)
+        from IPython import embed
+        embed()
 
     def test_compare_transcripts_skipped_exon_simple(self):
         # :TODO write permutation 
@@ -146,8 +163,9 @@ class TestCompareTwoTranscripts(unittest.TestCase):
         self.assertEqual(se.cigar2, [(3, 50)])
 
 
-    def test_pairwise_compoare(self):
+    def test_pairwise_compare(self):
         pass
+
         
 
 class TestDiffEvent(unittest.TestCase):

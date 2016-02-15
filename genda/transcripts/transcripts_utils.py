@@ -2,7 +2,7 @@ from itertools import tee, izip
 import requests
 # Requires bx python
 from bx.intervals.intersection import Intersecter, Interval
-from IPython import embed
+from .diffevent import DiffEvent, EventCollection 
 
 
 def pairwise(iterable):
@@ -11,114 +11,6 @@ def pairwise(iterable):
     return(izip(a,b))
 
 
-
-class EventCollection(object):
-    """ A collection of diffevents
-
-    Arguments
-    ---------
-    events - a list of genda.transcripts.DiffEvents
-    transcript_ids - a list of transcripts tested
-    """
-    equivalent_events = {
-            'SE' : 'skipped_exon',
-            'AS' : ''
-            }
-
-    def __init__(self, events, transcript_ids = None):
-        self.events = events
-        self.transcript_ids = transcript_ids
-
-    def __getitem__(self, key):
-        return(self.events[key])
-
-    def __len__(self):
-        return(len(self.events))
-
-    def filter(self, event_type):
-        out_events = []
-        for i in self.events:
-            if i.event_type == event_type:
-                out_events.append(i)
-        return(out_events)
-
-    def collapse(self):
-        """
-        """
-        raise NotImplemented
-
-
-
-class DiffEvent(object):
-    """A differential splicing event between
-    two or more transcripts
-
-    Arguments
-    ---------
-    event_type : ['skipped_exon', 'mxe', 'A5SE', 'ATS']
-    start : start position of differential event
-    end : end position of differential event
-    transcript_id : 
-    chrom : optional
-    exon_num : exon number 
-    cigar1 :  the cigar tuple generated across an event
-    cigar2 : the cigar tuple generated across the other transcript
-    event
-    """
-    def __init__(self, event_type, start, end,
-            transcript_ids, cigar1=None, cigar2=None, 
-            chrom=None, 
-            exon_num=None, 
-            exon2 = None):
-        self.event_type = event_type
-        self.start = start
-        self.end = end
-        # Change to list
-        # Make this less chunky
-        self.transcript_ids = transcript_ids
-        self.exon_num = exon_num
-        self.chrom = chrom
-        self.cigar1 = cigar1
-        self.cigar2 = cigar2
-        self.exon2 = exon2
-
-    def __repr__(self):
-        return(str(self.start) + '-' +  str(self.end) +\
-                ':' + str(self.cigar1) +  ':' + str(self.cigar2))
-
-    def __eq__(self, other):
-        if self.start == other.start and\
-                (self.end == other.end):
-            return(True)
-        else:
-            return(False)
-
-    def _extend(self, new_cigar, cig=1):
-        """Extends a diffevent for example
-        a mutual exclusive exon or two skipped
-        exons and other complex events
-        """
-        old_cig = getattr(self, 'cigar{0!s}'.format(cig)) 
-        old_cig.extend(new_cigar)
-        setattr(self, 'cigar{0!s}'.format(cig), old_cig)
-
-    def add_transcript(self, transcripts=[]):
-        """ Add other transcript pairs that share 
-        the same differential event
-        """
-
-        raise NotImplementedError
-
-
-    def cig_to_string(self):
-        raise NotImplementedError
-
-
-    def calc_size_norm(self):
-        """ Calculate rough normalization factor
-        """
-        if self.event_type == 'skipped_exon':
-            return()
 
 
 
@@ -290,9 +182,10 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
     matching_exons = []
     exclusive_juncs = []
     skipped_exons = []
+    altstart = None
+    altend = None
     # Perform the query
     exon_match = {}
-    start_of_exons = None
     # Sorted on starts, but maybe sort on exon number?
     s1.sort(key=lambda x: x[0])
     s2.sort(key=lambda x: x[0])
@@ -301,12 +194,11 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
     #end_position_s2 = max([i[1] for i in s2])
     s1_end = max([i[1] for i in s1])
     prev_match = None
-    mskip_counter = 1
     if max_exon_1 < s1[0][2]:
         strand = -1
     else:
         strand = 1
-    
+    #Comparsion is symettrical.  
     for pcurr in range(len(s2)):
         start, end, exon_n = s2[pcurr]
         overlap = tree.find(int(start), int(end))
@@ -328,13 +220,15 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
                             exon_num = (None, exon_n), 
                             exon2=(prev_match.value['anno'], nexon)))
                 except KeyError:
+                    # Multiple skipped exons
                     ncig = _generate_cigar(s2, pcurr, mskip=1)[1:]
                     skipped_exons[-1]._extend(ncig, cig=2)
             elif start > s1_end: break
-            else: pass
+            else: 
+                cigar = (0, end-start)
+                altstart.append(DiffEvent('AS', start, end,
+                        torder, cigar2=cigar, cigar1 = ocigar))
         elif len(overlap) == 1:
-            if start_of_exons: pass
-            else: start_of_exons = overlap[0].value['anno']
             if start == overlap[0].start and end == overlap[0].end:
                 s1_exon_n = overlap[0].value['anno']
                 matching_exons.append((start, end, (s1_exon_n, 
@@ -342,7 +236,6 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
                 if prev_match:
                     if s1_exon_n - prev_match.value['anno']  == strand: 
                         pass
-                    #elif prev_match.value['anno'] < s1_exon_n - 1:
                     else:
                         # Difference in exon matches
                         mskip = abs(s1_exon_n - prev_match.value['anno'] ) -1
@@ -376,11 +269,10 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
             prev_match = overlap[0]
             exon_match[exon_n] = int(overlap[0].value['anno'])
         else:
-            if start_of_exons:
-                pass
-            else: start_of_exons = overlap[0].value['anno']
+            pass
     skipped_exons = EventCollection(events=skipped_exons)
     return(matching_exons, skipped_exons)
+
 
 def pairwise_transcript_comparison(transcript_dict):
     """ Returns pairwise transcripts where there are skipped exons 
