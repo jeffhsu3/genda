@@ -12,8 +12,6 @@ def pairwise(iterable):
 
 
 
-
-
 class Exon(object):
     """ A region
     """
@@ -176,14 +174,16 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
         s2_beg = min(starts1)
     if reverse: torder = (trans2, trans1)
     else: torder = (trans1, trans2)
+    # Ignore single-exon stuff
+    if len(s1) <= 1 or len(s2) <= 1:
+        return([], [])
     for i in s1:
         tree.add_interval(Interval(int(i[0]), int(i[1]), 
             value={'anno':i[2]}))
     matching_exons = []
     exclusive_juncs = []
     skipped_exons = []
-    altstart = None
-    altend = None
+    altends = []
     # Perform the query
     exon_match = {}
     # Sorted on starts, but maybe sort on exon number?
@@ -198,12 +198,12 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
         strand = -1
     else:
         strand = 1
-    #Comparsion is symettrical.  
     for pcurr in range(len(s2)):
         start, end, exon_n = s2[pcurr]
         overlap = tree.find(int(start), int(end))
         if len(overlap) == 0:
             if prev_match and (start < s1_end):
+                #skipped exons
                 cigar = _generate_cigar(s2, pcurr, mskip=1)
                 try:
                     if exon_match[exon_n - strand] == prev_match.value['anno']:
@@ -212,21 +212,34 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
                             ocigar = [(3, nm.start - prev_match.end)]
                             nexon = nm.value['anno']
                         except IndexError:
-                            nm = s1[_get_by_exonn(prev_match.value['anno']+1,s1)] 
+                            nm=s1[_get_by_exonn(prev_match.value['anno']+strand,s1)] 
                             ocigar = [(3,nm[0] - prev_match.end)]
                             nexon = nm[2]
                     skipped_exons.append(DiffEvent('skipped_exon', start, end,
                             torder, cigar2=cigar, cigar1 = ocigar, 
                             exon_num = (None, exon_n), 
-                            exon2=(prev_match.value['anno'], nexon)))
+                            exon2=(prev_match.value['anno'], nexon))
+                            )
                 except KeyError:
                     # Multiple skipped exons
                     ncig = _generate_cigar(s2, pcurr, mskip=1)[1:]
                     skipped_exons[-1]._extend(ncig, cig=2)
             elif start > s1_end: break
             else: 
-                cigar = (0, end-start)
-                altstart.append(DiffEvent('AS', start, end,
+                # Alternate start site
+                cigar = _generate_cigar(s2, pcurr, mskip=1)[:-1]
+                try:
+                    nm = tree.find(*s2[pcurr +1][0:2])[0]
+                except IndexError:
+                    print(s2)
+                    #from IPython import embed
+                    #embed()
+                nexon = nm.value['anno']
+                narg = _get_by_exonn(nexon - strand, s1)
+                pmatch = s1[narg]
+                ocigar = [(0, pmatch[1] - pmatch[0]),
+                        (3, nm.start - pmatch[1])]
+                altends.append(DiffEvent('AS', start, end,
                         torder, cigar2=cigar, cigar1 = ocigar))
         elif len(overlap) == 1:
             if start == overlap[0].start and end == overlap[0].end:
@@ -239,7 +252,6 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
                     else:
                         # Difference in exon matches
                         mskip = abs(s1_exon_n - prev_match.value['anno'] ) -1
-                        print(mskip)
                         narg = _get_by_exonn(prev_match.value['anno']+strand, s1) 
                         s_s1 = s1[narg] # skipped s1
                         cigar = _generate_cigar(s1, narg, mskip=mskip)
@@ -271,6 +283,7 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
         else:
             pass
     skipped_exons = EventCollection(events=skipped_exons)
+    skipped_exons.events.extend(altends)
     return(matching_exons, skipped_exons)
 
 
@@ -281,12 +294,37 @@ def pairwise_transcript_comparison(transcript_dict):
     """
     skipped_exons_out = []
     for key1, key2 in pairwise(transcript_dict.keys()):
-        try:
-            _, skipped_exons = compare_two_transcripts(
-                    key1, key2, transcript_dict)
-        except IndexError:
-            from IPython import embed
-            embed()
-        if len(skipped_exons) >=1:
-            skipped_exons_out.append(skipped_exons)
+        if (len(transcript_dict[key1]) >= 1) and\
+                (len(transcript_dict[key2]) >= 1):
+            _, skipped_exons = compare_two_transcripts( key1, key2, 
+                    transcript_dict)
+            if len(skipped_exons) >=1:
+                skipped_exons_out.append(skipped_exons)
+        else: pass
     return(skipped_exons_out)
+
+
+def generate_to_plot_tuple(de, transcript_dict):
+    """
+    """
+    if de.exon_num[0]:
+        sea = 0
+    else:
+        sea = 1
+    eoi = [de.exon_num[sea]]
+    cigar_skipped = getattr(de, 'cigar{0!s}'.format(sea*1 + 1))
+    if len(cigar_skipped) > 3:
+        eoi.append(eoi[0] + 1)
+    else: pass
+    cpath = transcript_dict[de.tid[sea]]
+    eoi = [i[1] for i in cigar_skipped if i[0] == 3]
+    eoi2 = getattr(de,'cigar{0!s}'.format(2 - 1*sea))[0][1]
+    # Move generation of to plot into diffevents?
+    to_plot1 = [i for i in cpath if (i[2] >= min(eoi) - 1) and (i[2] <= max(eoi)+ 1)]
+    transcript_dict[de.tid[sea]] = to_plot1
+    #to_plot2 = [i for i in transcript_dict[de.tid[1-sea]]]
+    to_plot2 = [i for i in transcript_dict[de.tid[1-sea]] if i[2] in
+            [de.exon2[0], de.exon2[1]]]
+    transcript_dict[de.tid[1-sea]] = to_plot2
+    return(to_plot1, to_plot2, eoi, eoi2)
+

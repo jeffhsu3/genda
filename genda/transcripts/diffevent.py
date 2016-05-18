@@ -24,7 +24,8 @@ class EventCollection(object):
     def filter(self, event_type):
         out_events = []
         for i in self.events:
-            if i.event_type == event_type:
+            if i.event_type == event_type or\
+            i.event_type == self.equivalent_events[event_type]:
                 out_events.append(i)
         return(out_events)
 
@@ -53,19 +54,19 @@ class DiffEvent(object):
     def __init__(self, event_type, start, end,
             transcript_ids, cigar1=None, cigar2=None, 
             chrom=None, 
-            exon_num=None, 
-            exon2 = None):
+            exon_num=None, exon2 = None, exons = None):
         self.event_type = event_type
         self.start = start
         self.end = end
         # Change to list
         # Make this less chunky
-        self.transcript_ids = transcript_ids
+        self.tid = transcript_ids
         self.exon_num = exon_num
         self.chrom = chrom
         self.cigar1 = cigar1
         self.cigar2 = cigar2
         self.exon2 = exon2
+        self.exons = exons 
 
     def __repr__(self):
         return(str(self.start) + '-' +  str(self.end) +\
@@ -94,7 +95,6 @@ class DiffEvent(object):
         """ Add other transcript pairs that share 
         the same differential event
         """
-
         raise NotImplementedError
 
 
