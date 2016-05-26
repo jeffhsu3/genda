@@ -1,12 +1,12 @@
-import os, sys, glob
+import glob
+from setuptools import setup
+from distutils.extension import Extension
+
 import numpy
 import pysam
 
 name = 'genda'
 version = '0.1'
-
-from setuptools import setup
-from distutils.extension import Extension
 
 try:
     from Cython.Distutils import build_ext
@@ -27,18 +27,18 @@ if use_cython:
     print('**********using cython*********')
     ext_modules += [
         Extension("genda.transcripts.exon_utils",
-                  ["genda/transcripts/exon_utils.pyx" ], 
+                  ["genda/transcripts/exon_utils.pyx"],
                   include_dirs=includes),
 
         Extension("genda.pysam_callbacks.allele_counter",
-            ["genda/pysam_callbacks/allele_counter.pyx"],
-            include_dirs=includes,
-            define_macros=pysam.get_defines()),
+                  ["genda/pysam_callbacks/allele_counter.pyx"],
+                  include_dirs=includes,
+                  define_macros=pysam.get_defines()),
 
         Extension("genda.stats.aei_count_samples",
-            ["genda/stats/aei_count_samples.pyx"],
-            include_dirs=includes,
-            define_macros=pysam.get_defines()),
+                  ["genda/stats/aei_count_samples.pyx"],
+                  include_dirs=includes,
+                  define_macros=pysam.get_defines()),
     ]
     print(ext_modules)
     cmdclass.update({'build_ext': build_ext})
@@ -48,29 +48,29 @@ else:
         Extension("genda.transcripts.exon_utils",
                   ["genda/transcripts/exon_utils.c"]),
         Extension("genda.pysam_callbacks.allele_counter",
-            ["genda/pysam_callbacks/allele_counter.c"]),
+                  ["genda/pysam_callbacks/allele_counter.c"]),
         Extension("genda.pysam_callbacks.gene_counter",
-            ["genda/stats/aei_count_samples.c"]),
+                  ["genda/stats/aei_count_samples.c"]),
     ]
 
 
-metadata = {'name':name,
+metadata = {'name': name,
             'version': version,
             'cmdclass': cmdclass,
             'ext_modules': ext_modules,
             'scripts': glob.glob('scripts/*.py'),
-            'description':'genda',
-            'author':'Jeffrey Hsu',
-            'packages':['genda', 
-                        'genda.stats',
-                        'genda.parsing',
-                        'genda.formats',
-                        'genda.pysam_callbacks',
-                        'genda.transcripts', 
-                        'genda.AEI', 
-                        'genda.plotting',
-                        'genda.eQTL'],
-}
+            'description': 'genda',
+            'author': 'Jeffrey Hsu',
+            'packages': ['genda',
+                         'genda.stats',
+                         'genda.parsing',
+                         'genda.formats',
+                         'genda.pysam_callbacks',
+                         'genda.transcripts',
+                         'genda.AEI',
+                         'genda.plotting',
+                         'genda.eQTL'],
+            }
 
 
 if __name__ == '__main__':

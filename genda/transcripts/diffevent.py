@@ -41,7 +41,7 @@ class DiffEvent(object):
 
     Arguments
     ---------
-    event_type : ['skipped_exon', 'mxe', 'A5SE', 'ATS']
+    event_type : ['skipped_exon', 'mxe', 'A5SE', 'ATS', 'AFE']
     start : start position of differential event
     end : end position of differential event
     transcript_id : 
