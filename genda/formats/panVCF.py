@@ -8,7 +8,7 @@ from itertools import cycle
 import functools
 import numpy as np
 import pandas as pd
-import Genotype
+from .genotype import Genotype
 
 
 def parse_chr(entry):
@@ -41,7 +41,7 @@ def parse_geno(entry, GT=0):
         return np.NaN
 
 
-class VCF(Genotype.Genotype):
+class VCF(Genotype):
     """ A pandas dataframe wrapper for VCF files.
     """
 

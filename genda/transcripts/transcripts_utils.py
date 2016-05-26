@@ -1,4 +1,11 @@
-from itertools import tee, izip
+from itertools import tee
+try:
+    from future_builtins import zip
+except ImportError: # not 2.6+ or is 3.x
+    try:
+        from itertools import izip as zip
+    except ImportError:
+        pass
 import requests
 # Requires bx python
 from bx.intervals.intersection import Intersecter, Interval
@@ -8,7 +15,7 @@ from .diffevent import DiffEvent, EventCollection
 def pairwise(iterable):
     a, b = tee(iterable)
     next(b, None)
-    return(izip(a,b))
+    return(zip(a,b))
 
 
 

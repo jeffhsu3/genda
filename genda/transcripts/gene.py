@@ -17,7 +17,7 @@ class Gene(object):
             transcripts=[], strand=None, 
             symbol=None):
         self.gene = gene
-        self.chrom = str(chrom).encode('utf8')
+        self.chrom = str(chrom)
         self.start = start
         self.end = end
         self.transcripts = []
