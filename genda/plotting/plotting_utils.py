@@ -48,7 +48,8 @@ def create_path(gtf_iterator, gene, height=0.5, x_scale=1):
 
 
 def should_not_plot(x):
-    """
+    """Returns true if not None
+    x : pandas.DataFrame or numpy array
     """
     if x is None:
         return True
@@ -261,7 +262,7 @@ def plot_transcript_(transcript, ax, y=0, height=2.,
                      intron_scale=0.10, scale=1):
     '''
     Arguments
-    =========
+    ---------  
     transcript - a list of exons (start, end, exon_number) or
     a genda.transcripts.Transcript object
     ax - matplotlib.axes
@@ -272,8 +273,8 @@ def plot_transcript_(transcript, ax, y=0, height=2.,
     :TODO transcript could be an object.  
     :TODO write tests for this
 
-    Returns:
-    =======
+    Returns
+    ------- 
     matplotlib.axis
     new_scaled_ylim and xlim
     '''
@@ -300,7 +301,7 @@ def plot_transcript_(transcript, ax, y=0, height=2.,
     return(ax, (beg_exon[0], xmax))
 
 
-def draw_arc_label(start, end):
+def draw_arc_label(start, end, ax, color = 'black'):
     """ dra 
     Primarily used
     """
@@ -314,6 +315,10 @@ def draw_arc_label(start, end):
              P1,
              P2,
              end]
+    path = Path(verts, codes)
+    patch = patches.PathPatch(path, lw=3, color=color, facecolor='none')
+    ax.add_patch(patch)
+    return(ax)
 
 
 def add_size_legends(ax, size_base=200):
