@@ -8,7 +8,8 @@ class EventCollection(object):
     """
     equivalent_events = {
             'SE' : 'skipped_exon',
-            'AS' : ''
+            'AS' : 'alternative_start',
+            'MXE' : 'mutually_exclusive_exon',
             }
 
     def __init__(self, events, transcript_ids = None):

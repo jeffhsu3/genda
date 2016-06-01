@@ -301,7 +301,8 @@ def plot_transcript_(transcript, ax, y=0, height=2.,
     return(ax, (beg_exon[0], xmax))
 
 
-def draw_arc_label(start, end, ax, color = 'black'):
+def draw_arc_label(start, end, ax, color = 'black',
+        mirror=False):
     """ dra 
     Primarily used
     """
@@ -309,15 +310,39 @@ def draw_arc_label(start, end, ax, color = 'black'):
              Path.CURVE4,
              Path.CURVE4,
              Path.CURVE4, ]
-    P1 = (start[0], end[1])
+    if mirror:
+        P1 = (end[0], start[1])
+    else:
+        P1 = (start[0], end[1])
     P2 = end
     verts = [start,
              P1,
              P2,
              end]
     path = Path(verts, codes)
-    patch = patches.PathPatch(path, lw=3, color=color, facecolor='none')
+    patch = patches.PathPatch(path, lw=2, ec=color, facecolor='none')
     ax.add_patch(patch)
+    return(ax)
+
+
+def draw_junction_arcs(to_plot, hist,  xmin, ax, color='black', 
+        text='hmm', y_buffer=0):
+    """
+    :TODO refactor so that to_plot is a diff event
+    to_plot - tuple
+    """
+    x1 = to_plot[0][1]
+    x2 = to_plot[1][0]
+    start = (x1, hist[x1 - xmin - 1])
+    xmid = (to_plot[1][0] - to_plot[0][1])/2 + to_plot[0][1]
+    ymid =  max(hist[x1 - xmin - 1], hist[x2 - xmin]) + y_buffer
+    ax = draw_arc_label(start, 
+            (xmid, ymid),
+            ax, color=color)
+    ax = draw_arc_label((xmid, ymid),
+            (x2, hist[x2-xmin]),
+            ax, color = color, mirror = True)
+    ax.text(xmid, ymid, '{0:.2g}'.format(text), size='x-large')
     return(ax)
 
 
