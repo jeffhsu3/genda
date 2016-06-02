@@ -1,10 +1,12 @@
+import numpy as np
+
 class EventCollection(object):
     """ A collection of diffevents
 
     Arguments
     ---------
-    events - a list of genda.transcripts.DiffEvents
-    transcript_ids - a list of transcripts tested
+    events : a list of genda.transcripts.DiffEvents
+    transcript_ids : a list of transcripts tested
     """
     equivalent_events = {
             'SE' : 'skipped_exon',
@@ -31,7 +33,7 @@ class EventCollection(object):
         return(out_events)
 
     def collapse(self):
-        """
+        """ Collapses overlapping events
         """
         raise NotImplemented
 
@@ -43,6 +45,7 @@ class DiffEvent(object):
     Arguments
     ---------
     event_type : ['skipped_exon', 'mxe', 'A5SE', 'ATS', 'AFE']
+         event_type
     start : start position of differential event
     end : end position of differential event
     transcript_id : 
@@ -108,3 +111,21 @@ class DiffEvent(object):
         """
         if self.event_type == 'skipped_exon':
             return()
+
+
+# :TODO temporary location
+
+def intron_counts(event_collection, bamiter):
+    """
+    event_collection : genda.transcripts.EventCollection object
+        Event collections
+    bamiter : pysam.Samfile iteration object (get actually pysam obejct)
+    """
+    #:TODO move to cython
+    #event_collection.filter('SE')
+    intron_counts = np.zeros(len(event_collection.events), dtype=np.int32)
+    for read in bamiter:
+        rstart = read.pos
+        exons = [j[1] for j in read.cigar if j[0] == 0]
+        introns = [j[1] for j in read.cigar if j[0] == 3]
+    return intron_counts

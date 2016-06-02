@@ -320,7 +320,8 @@ def draw_arc_label(start, end, ax, color = 'black',
              P2,
              end]
     path = Path(verts, codes)
-    patch = patches.PathPatch(path, lw=2, ec=color, facecolor='none')
+    patch = patches.PathPatch(path, lw=2, ec=color, facecolor='none', 
+            linestyle='--')
     ax.add_patch(patch)
     return(ax)
 
