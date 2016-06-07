@@ -16,8 +16,8 @@ before_install:
 
 
 install: 
-  - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy nose dateutil pandas statsmodels matplotlib requests cython biopython mpld3 pysam
-  - conda install --yes -c bioconda bx-python
+  - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy nose dateutil pandas statsmodels matplotlib requests cython biopython mpld3
+  - conda install --yes -c bioconda pysam bx-python
   - conda install --yes -c dan_blanchard python-coveralls nose-cov 
   - python setup.py install
 
