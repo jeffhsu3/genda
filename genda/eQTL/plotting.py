@@ -65,13 +65,13 @@ def plot_dosage_by_rsID(gene_reference, dos, cov_mat, counts,
         adj_dos_mat = geno -\
             np.dot(results.params, cov_mat.T)
     else:
-        adj_dos_mat = dos.ix[gr.rsID, :]
+        adj_dos_mat = geno
     if adjy:
         results = sm.OLS(c, cov_mat).fit()
         adj_counts = c - np.dot(results.params, cov_mat.T)
         const = results.params.const
     else:
-        adj_counts = counts.ix[gr.gene, cov_mat_t.index]
+        adj_counts = c
         const = 0
     # Need to grab original genotypes
     colors = []

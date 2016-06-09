@@ -145,7 +145,7 @@ def _generate_cigar(transcript, current, mskip=1):
 def compare_two_transcripts(trans1, trans2, transcript_dict):
     """
     Returns the splice differences between two transcripts.
-    Note this ignores TSS and just looks for splice junctions
+    :TODO also return ALT TSS
 
     Parameters
     ----------
