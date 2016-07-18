@@ -31,7 +31,7 @@ class Exon(object):
             print("start and end positions need to be integers")
 
 
-def get_transcript_ids(gene, gff=None):
+def get_transcript_ids(gene, gff=None, ref37=False):
     """ Get transcript ids from Ensembl REST api
     Returns a list of transcripts,
 
@@ -47,7 +47,10 @@ def get_transcript_ids(gene, gff=None):
     if gff:
         pass
 
-    server = "http://rest.ensembl.org"
+    if ref37:
+        server = "http://grch37.rest.ensembl.org/"
+    else:
+        server = "http://rest.ensembl.org"
     ext = "/lookup/id/{0}?species=homo_sapiens;expand=1"
     r = requests.get(server+ext.format(gene), headers={ "Content-Type" :
         "application/json"})
@@ -121,6 +124,17 @@ def _get_by_exonn(exon_n, transcript):
         else: pass
 
 def _generate_cigar(transcript, current, mskip=1):
+    """Generates cigar tuple
+
+    Arguments
+    ---------
+    transcript : list
+        an exon list
+    current : int
+        current exon
+    mskip : int
+        number of exons to skip
+    """
     out = []
     for i in (range(mskip)):
         pint = transcript[current - 1 + i][0:2]  
@@ -142,17 +156,22 @@ def _generate_cigar(transcript, current, mskip=1):
             out.extend(([(3, c1), (0, end-start)]))
     return(out)
 
-def compare_two_transcripts(trans1, trans2, transcript_dict):
+def compare_two_transcripts(trans1, trans2, transcript_dict, 
+        afe=False):
     """
     Returns the splice differences between two transcripts.
-    :TODO also return ALT TSS
+    Single exon-comparisons are ignored.
 
     Parameters
     ----------
-    trans1 : string of transcript of interest
-    trans2 : string of second transcript of interest
+    trans1 : string 
+        transcript of interest
+    trans2 : string 
+        second transcript of interest
     transcript_dict : a dictionary of transcript names with 
     values being a list of exons
+    afe : bool
+       whether to include alternate start and ends
 
     :TODO make a better return
     :TODO maybe include something similar to to_plot
@@ -191,9 +210,7 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
     exclusive_juncs = []
     skipped_exons = []
     altends = []
-    # Perform the query
     exon_match = {}
-    # Sorted on starts, but maybe sort on exon number?
     s1.sort(key=lambda x: x[0])
     s2.sort(key=lambda x: x[0])
     max_exon_1 =  s1[-1][2]
@@ -231,16 +248,31 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
                     # Multiple skipped exons
                     ncig = _generate_cigar(s2, pcurr, mskip=1)[1:]
                     skipped_exons[-1]._extend(ncig, cig=2)
-            elif start > s1_end: break
+            elif start > s1_end: 
+                if prev_match:
+                    cigar = _generate_cigar(s2, pcurr, mskip=1)[:-2]
+                    try: 
+                        pm = tree.find(*s2[pcurr - 1][0:2])[0]
+                        #:TODO extend till end
+                    except IndexError: pass
+                    pexon = pm.value['anno']
+                    #:TODO extend ocigar till end?
+                    ocigar = []
+                    altends.append(DiffEvent('AE', start, end,
+                        torder, cigar2=cigar, cigar1=ocigar))
+                else: 
+                    # Completely no overlap
+                    pass
             else: 
-                # Alternate start site
+                # Alternate start site that starts in between exons
+                # of other transcript
                 cigar = _generate_cigar(s2, pcurr, mskip=1)[:-1]
                 try:
-                    nm = tree.find(*s2[pcurr +1][0:2])[0]
+                    nm = tree.find(*s2[pcurr + 1][0:2])[0]
                 except IndexError:
-                    print(s2)
                     #from IPython import embed
                     #embed()
+                    pass
                 nexon = nm.value['anno']
                 narg = _get_by_exonn(nexon - strand, s1)
                 pmatch = s1[narg]
@@ -258,7 +290,7 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
                         pass
                     else:
                         # Difference in exon matches
-                        mskip = abs(s1_exon_n - prev_match.value['anno'] ) -1
+                        mskip = abs(s1_exon_n - prev_match.value['anno'] ) - 1
                         narg = _get_by_exonn(prev_match.value['anno']+strand, s1) 
                         s_s1 = s1[narg] # skipped s1
                         cigar = _generate_cigar(s1, narg, mskip=mskip)
@@ -289,7 +321,7 @@ def compare_two_transcripts(trans1, trans2, transcript_dict):
             exon_match[exon_n] = int(overlap[0].value['anno'])
         else:
             pass
-    skipped_exons = EventCollection(events=skipped_exons)
+    skipped_exons = EventCollection(transcript_ids = [s1, s2], events=skipped_exons)
     skipped_exons.events.extend(altends)
     return(matching_exons, skipped_exons)
 

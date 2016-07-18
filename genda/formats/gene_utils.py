@@ -42,11 +42,14 @@ def grab_gene_location(id, ann_file = None, cis_buffer=0):
         raise NotImplementedError 
 
 
-def get_transcript_ids(gene):
+def get_transcript_ids(gene, ref37=False):
     """ Get transcript ids from ensembl 
     REST API from ensemble gene ID
     """
-    server = "http://rest.ensembl.org"
+    if ref37:
+        server = "http://grch37.rest.ensembl.org/"
+    else:
+        server = "http://rest.ensembl.org"
     ext = "/lookup/id/{0}?species=homo_sapiens;expand=1"
     r = requests.get(server+ext.format(gene), headers={ "Content-Type" :
         "application/json"})
