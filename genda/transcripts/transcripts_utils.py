@@ -116,6 +116,17 @@ def unique_sets(set_list):
     return(out_sets)
 
 
+def _generate_modified_cigar(transcript, current, mskip=1):
+    """
+    Arguments
+    ---------
+    transcript : list
+    current : int
+    mskip : int
+    """
+    pass
+
+
 
 def _get_by_exonn(exon_n, transcript):
     for i, j in enumerate(transcript):
@@ -250,18 +261,21 @@ def compare_two_transcripts(trans1, trans2, transcript_dict,
                     skipped_exons[-1]._extend(ncig, cig=2)
             elif start > s1_end: 
                 if prev_match:
-                    cigar = _generate_cigar(s2, pcurr, mskip=1)[:-2]
-                    try: 
-                        pm = tree.find(*s2[pcurr - 1][0:2])[0]
-                        #:TODO extend till end
-                    except IndexError: pass
+                    cigar = _generate_cigar(s2, pcurr, mskip=1)
+                    pm = tree.find(*s2[pcurr - 1][0:2])[0]
                     pexon = pm.value['anno']
-                    #:TODO extend ocigar till end?
                     ocigar = []
+                    for i in range(pexon, max_exon_1+strand, strand):
+                        narg = _get_by_exonn(i, s1)
+                        ocigar.append((0, s1[narg][0], s1[narg][1]))
+                        try:
+                            ocigar.append((3, s1[narg][1] - s1[narg+1][0]))
+                        except IndexError:
+                            pass
+                    #:TODO extend ocigar till end?
                     altends.append(DiffEvent('AE', start, end,
                         torder, cigar2=cigar, cigar1=ocigar))
                 else: 
-                    # Completely no overlap
                     pass
             else: 
                 # Alternate start site that starts in between exons
@@ -270,9 +284,8 @@ def compare_two_transcripts(trans1, trans2, transcript_dict,
                 try:
                     nm = tree.find(*s2[pcurr + 1][0:2])[0]
                 except IndexError:
-                    #from IPython import embed
-                    #embed()
-                    pass
+                    from IPython import embed
+                    embed()
                 nexon = nm.value['anno']
                 narg = _get_by_exonn(nexon - strand, s1)
                 pmatch = s1[narg]
