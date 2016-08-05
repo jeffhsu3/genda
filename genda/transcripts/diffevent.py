@@ -121,7 +121,7 @@ def intron_counts(event_collection, bamiter):
         Event collections
     bamiter : pysam.Samfile iteration object (get actually pysam obejct)
     """
-    #:TODO move to cython
+    #:TODO move to cython or numba
     #event_collection.filter('SE')
     intron_counts = np.zeros(len(event_collection.events), dtype=np.int32)
     for read in bamiter:

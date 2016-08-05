@@ -128,6 +128,7 @@ def _generate_modified_cigar(transcript, current, mskip=1):
 
 
 
+
 def _get_by_exonn(exon_n, transcript):
     for i, j in enumerate(transcript):
         if j[2] == exon_n:
@@ -158,15 +159,17 @@ def _generate_cigar(transcript, current, mskip=1):
             c2 = max(nint[0] - end,
                     pint[0] - end)
             if i >= 1:
-                out.extend([(0, end-start), (3, c2)])
+                out.extend([(0, start, end), (3, c2)])
             else:
-                out.extend([(3, c1), (0, end-start), (3, c2)])
+                out.extend([(3, c1), (0, start, end), (3, c2)])
         except IndexError:
             # end
             c1 = start-pint[1]
-            out.extend(([(3, c1), (0, end-start)]))
+            out.extend(([(3, c1), (0, start, end)]))
     return(out)
 
+
+        
 def compare_two_transcripts(trans1, trans2, transcript_dict, 
         afe=False):
     """
@@ -274,7 +277,8 @@ def compare_two_transcripts(trans1, trans2, transcript_dict,
                             pass
                     #:TODO extend ocigar till end?
                     altends.append(DiffEvent('AE', start, end,
-                        torder, cigar2=cigar, cigar1=ocigar))
+                        torder, cigar2=cigar, cigar1=ocigar,
+                        exon_num = (None, exon_n)))
                 else: 
                     pass
             else: 
