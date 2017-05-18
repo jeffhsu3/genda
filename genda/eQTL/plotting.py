@@ -101,7 +101,7 @@ def plot_dosage_by_rsID(gene_reference, dos, cov_mat, counts,
     else:
         annot_y = 1
     yrange = yticks[-1] - yticks[0]
-    ax.text(xticks[0] + 0.025, yticks[annot_y] + annot_y / 2 * yrange / 5,
+    ax.text(xticks[0] + 0.025, yticks[annot_y] + -1 * yrange / 5,
             '$R^{2}$=%s' % str(test.rsquared)[0:4],
             style='italic')
     ax.set_ylabel('$log_{2}$ CPM')
@@ -152,7 +152,6 @@ def plot_eQTL(meQTL, gene_name, annotation, dosage, ax=None,
     dosage_sub = dosage.ix[subset.index, :]
     print('subset shape')
     print(subset.shape)
-
     dosage_maf =\
         calculate_minor_allele_frequency(dosage_sub)
     dosage_maf[dosage_maf > 0.5] = 1 - dosage_maf[dosage_maf > 0.5]

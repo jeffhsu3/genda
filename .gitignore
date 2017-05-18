@@ -16,6 +16,8 @@
 *.coverage
 *.nfs*
 
+.Rhistory
+
 #OpenSNP data
 user*.txt
 

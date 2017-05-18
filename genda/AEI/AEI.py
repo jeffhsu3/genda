@@ -1,8 +1,8 @@
 from math import ceil
 import pandas as pd
 import numpy as np
-from scipy.stats import ttest_ind
-from textwrap import wrap
+from scipy.stats import ttest_ind, mannwhitneyu 
+from ldpred import ld
 
 from collections import defaultdict
 
@@ -26,7 +26,8 @@ def remove_tr_spines(ax):
     return(ax)
 
 
-def single_snp_aei_test(geno, outliers, allelic_ratio, num_threshold=2):
+def single_snp_aei_test(geno, outliers, allelic_ratio, num_threshold=2, 
+        nonparametric=False):
     """
     """
     geno = geno[np.logical_not(outliers)]
@@ -35,19 +36,28 @@ def single_snp_aei_test(geno, outliers, allelic_ratio, num_threshold=2):
     if len(het_combined) < num_threshold or len(homo_combined) < num_threshold:
         return(1)
     else:
-        return(ttest_ind(het_combined, homo_combined, equal_var=False)[1])
+        if nonparametric == True:
+            pvalue = mannwhitneyu(het_combined, homo_combined)[1]
+        else:
+            pvalue = ttest_ind(het_combined, homo_combined, equal_var=False)[1]
+    return(pvalue)
 
 
-def single_snp_aei_test2(geno, allelic_ratio, num_threshold=2):
+def single_snp_aei_test2(geno, allelic_ratio, num_threshold=2, 
+        nonparametric=False):
     het_combined = allelic_ratio[np.array(geno == 1)]
     homo_combined = allelic_ratio[np.array(np.logical_or(geno==0, geno==2))]
     # Het_combined must have a higher ratio than homo_combined
     if len(het_combined) < num_threshold or len(homo_combined) < num_threshold:
-        return(1)
+        return(np.nan)
     elif (het_combined.mean() > homo_combined.mean()):
-        return(1)
+        return(np.nan)
     else:
-        return(ttest_ind(het_combined, homo_combined, equal_var=False)[1])
+        if nonparametric == True:
+            pvalue = mannwhitneyu(het_combined, homo_combined)[1]
+        else:
+            pvalue = ttest_ind(het_combined, homo_combined, equal_var=False)[1]
+        return(pvalue)
 
 
 
@@ -114,7 +124,10 @@ class AEI(object):
         self.gene_name = gene_name
         self.aei = self.aei.ix[self.geno.index.intersection(self.aei.index),:]
         # SNPs of interest
-        #self.ld = calculate_ld(self.geno.ix[:,0], snps_interest) 
+        print('calculating ld')
+        self.ld_table = ld.calc_ld_table(self.geno.values, min_r2=0.4) 
+        from IPython import embed
+        embed()
         # :TODO Need to merge aei ids into here
 
 
@@ -123,13 +136,14 @@ class AEI(object):
         """
         :TODO split this up into two functions 1 for series and one for
         dataframe
+
         Arguments
         ---------
-        eQTL - eQTL pvalues
-        num_threshold - threshold of heterozygous samples at the tag SNP
+        eQTL : eQTL pvalues
+        num_threshold : threshold of heterozygous samples at the tag SNP
         required
-        single_snp - calculate the pvalue at just a single SNP
-        count_threshold - number counts at the tag SNP within an 
+        single_snp : calculate the pvalue at just a single SNP
+        count_threshold : number counts at the tag SNP within an 
         individual before that individual will be used in the fit
         """
         base_pair_to_index = {'A':0, 'C': 1, 'G': 2, 'T': 3}
@@ -177,6 +191,7 @@ class AEI(object):
         hets = hets.ix[sufficient_hets >= num_threshold, :]
         aei_t = self.aei.ix[hets.index,:]
         #self.aei.apply(calc_pvalues, axis=1, args=(hets))
+        # :TODO filter on LD option
         pvalues_out = np.ones((self.geno.shape[0], aei_t.shape[0]),
             dtype=np.double)
         pvalues_out = pd.DataFrame(pvalues_out, index=self.geno.index,
@@ -218,7 +233,7 @@ class AEI(object):
             geno_i = geno_t.ix[:, allelic_ratio.index]
             pvalues_out.iloc[:, c] = (geno_i.
                                apply(single_snp_aei_test2, axis=1, 
-                               args=(allelic_ratio,)))
+                               args=(allelic_ratio,), nonparametric=False))
             hets_dict[i] = hi
             c += 1 
         self.pvalues = pvalues_out

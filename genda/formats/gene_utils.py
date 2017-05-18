@@ -24,7 +24,7 @@ def get_symbol_ensembl(ensembl):
             return('NA')
 
 
-def grab_gene_location(id, ann_file = None, cis_buffer=0):
+def grab_gene_location(gid, ann_file = None, cis_buffer=0):
     """ Grab the gene boundries as a tuple buffered by 
     cis_buffer
 
@@ -32,9 +32,9 @@ def grab_gene_location(id, ann_file = None, cis_buffer=0):
     """
 
     if ann_file:
-        with gzip.open(ann_file) as annot:
+        with gzip.open(ann_file, mode='rt') as annot:
             for line in annot:
-                if id in line:
+                if gid in line:
                     line = line.split("\t")
                     return(line[0], int(line[1]) - cis_buffer, 
                             int(line[2]) + cis_buffer, str(line[4]))
