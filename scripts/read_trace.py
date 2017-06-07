@@ -11,7 +11,7 @@ import random
 from collections import defaultdict
 # Set seed
 
-trymYuzuKana:
+try:
     import configparser 
 except ImportError:
     import ConfigParser as configparser
@@ -99,7 +99,7 @@ def main(chunk):
         tdict[i] = j
         ax.plot(j.mean(axis=1), j.std(axis=1) , 'o')
     """
-    fig.savefig('/home/hsuj/lustre/output/sd_mean_mcmc.png')
+    fig.savefig('/home/hsuj/lustre/output/sd_mean_mcmc.png', dpi=300)
     all_genes_single_sampling = pd.concat(by_mcmc_sampling, axis=1, join='inner')
     all_genes_single_sampling.to_csv('/home/hsuj/lustre/matrixeQTL_mmseq/temp/sampling_{0}.txt'.format(chunk))
 

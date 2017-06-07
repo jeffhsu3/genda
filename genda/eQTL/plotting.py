@@ -97,12 +97,17 @@ def plot_dosage_by_rsID(gene_reference, dos, cov_mat, counts,
     abline_plot(const, fitted_line.params[0], color='k', ax=ax)
     test = sm.OLS(c, cov_mat_t).fit()
     if test.params[gr.rsID] > 0:
-        annot_y = - 1
+        r2_text_pos = yticks[-1] - (yticks[-1] - yticks[-2])/5
     else:
-        annot_y = 1
-    yrange = yticks[-1] - yticks[0]
-    ax.text(xticks[0] + 0.025, yticks[annot_y] + -1 * yrange / 5,
-            '$R^{2}$=%s' % str(test.rsquared)[0:4],
+        r2_text_pos = yticks[0] + (yticks[1] - yticks[0])/5
+    ymin_, ymax_ = ax.get_ylim()
+    if r2_text_pos < ax.get_ylim()[0]:
+        r2_text_pos = ymin_ + (ymax_ - ymin_)/12
+    elif r2_text_pos > ax.get_ylim()[0]: 
+        r2_text_pos = ymax_ - (ymax_ - ymin_)/12
+    ax.text(xticks[0] + 0.025, 
+            r2_text_pos, 
+            '$r^{2}$=%s' % str(test.rsquared)[0:4],
             style='italic')
     ax.set_ylabel('$log_{2}$ CPM')
     ax.set_xlabel('Fitted Dosages')

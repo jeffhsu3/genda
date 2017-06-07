@@ -79,7 +79,7 @@ def dosage_round(geno, threshold = 0.5):
 
 class AEI(object):
     def __init__(self, aei_dataframe, geno, snp_annot, gene_name,
-            maf_threshold = 0.05):
+            maf_threshold = 0.05, ld_prune=False):
         """ 
         Arguments
         ---------
@@ -121,17 +121,13 @@ class AEI(object):
                 (self.maf <= 1 - maf_threshold), :]
         self.snp_annot = snp_annot.ix[self.geno.index, :]
         self.maf = self.maf[self.geno.index]
+        
         self.gene_name = gene_name
         self.aei = self.aei.ix[self.geno.index.intersection(self.aei.index),:]
         # SNPs of interest
-        print('calculating ld')
-        self.ld_table = ld.calc_ld_table(self.geno.values, min_r2=0.4) 
-        from IPython import embed
-        embed()
-        # :TODO Need to merge aei ids into here
 
 
-    def calc_aei(self, num_threshold=5, count_threshold = 30, 
+    def calc_aei(self, num_threshold=5, count_threshold = 20, 
             single_snp=None, outlier_thresh=-4.32):
         """
         :TODO split this up into two functions 1 for series and one for
@@ -170,6 +166,14 @@ class AEI(object):
                 dtype=bool),
                 index=self.geno.columns, 
                 columns=pd.Index(not_indel))
+        ref_counts = pd.DataFrame(np.zeros(m_size,
+            dtype=np.uint16),
+            index=self.geno.columns,
+            columns=pd.Index(not_indel))
+        alt_counts = pd.DataFrame(np.zeros(m_size,
+            dtype=np.uint16),
+            index=self.geno.columns,
+            columns=pd.Index(not_indel))
         # sufficient hets is really het counts
         sufficient_hets = pd.Series(
                 data=np.repeat(0, len(not_indel)), 
@@ -184,7 +188,6 @@ class AEI(object):
             return((hetr == 1.0) &  np.logical_not(pd.isnull(hetr)))
 
         #:TODO deal with aei being class series
-
         hets = hets.apply(_run_df, axis=1)
         #print(hets)
         sufficient_hets = hets.sum(axis=1)
@@ -216,18 +219,19 @@ class AEI(object):
                     dtype=np.float64)
             alt = np.asarray(aei_t.loc[i, idx[hi, ALT]].values,
                     dtype=np.float64)
-            s = ref + alt
-            s = s >= count_threshold 
+            #s_c = ref + alt
+            #sum_thresh = s_c >= count_threshold 
             allelic_ratio = alt/ref
             allelic_ratio = pd.Series(allelic_ratio,
                     index=hi)
             aei_ratios.ix[hi, c] = allelic_ratio
+            ref_counts.ix[hi, c] = ref
+            alt_counts.ix[hi, c] = alt
             allelic_ratio[allelic_ratio > 1] =\
                     1/allelic_ratio[allelic_ratio > 1]
-
             outliers = (np.log2(allelic_ratio) < outlier_thresh) |\
                     np.isinf(np.log2(allelic_ratio))
-            outliers = np.logical_or(outliers, np.logical_not(s))
+            #outliers = np.logical_or(outliers, np.logical_not(sum_thresh))
             outliers_m.ix[hi, i] = outliers
             allelic_ratio = allelic_ratio[np.logical_not(outliers)]
             geno_i = geno_t.ix[:, allelic_ratio.index]
@@ -240,6 +244,8 @@ class AEI(object):
         self.hets_dict = hets_dict
         self.ratios = aei_ratios
         self.outliers = outliers_m
+        self.ref = ref_counts
+        self.alt = alt_counts
         
 
     def aei_barplot(self, csnp, tsnp, ax=None, gene_name=None, title=True):
