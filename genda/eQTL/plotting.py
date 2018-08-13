@@ -157,6 +157,7 @@ def plot_eQTL(meQTL, gene_name, annotation, dosage, ax=None,
     dosage_sub = dosage.ix[subset.index, :]
     print('subset shape')
     print(subset.shape)
+    print(kwargs)
     dosage_maf =\
         calculate_minor_allele_frequency(dosage_sub)
     dosage_maf[dosage_maf > 0.5] = 1 - dosage_maf[dosage_maf > 0.5]
@@ -174,7 +175,7 @@ def plot_eQTL(meQTL, gene_name, annotation, dosage, ax=None,
     # Need this since pos is a numpy array not pandas series
     snpx = pos[iix[0]]
     snp_pv = adj_pv.iloc[iix[0]]
-    color1 = calculate_ld(dosage_sub,
+    color_ld = calculate_ld(dosage_sub,
                           snp)[dosage_sub.index].values
     if ax is None:
         ax_orig = False
@@ -190,7 +191,7 @@ def plot_eQTL(meQTL, gene_name, annotation, dosage, ax=None,
     ax.set_ylim((-0.01, ylim))
     ax.xaxis.set_major_formatter(x_formatter)
     ### Actual scatter #############################
-    im = ax.scatter(pos, adj_pv, s=dosage_maf, c=color1)
+    im = ax.scatter(pos, adj_pv, s=dosage_maf, c=color_ld, **kwargs)
     #:TODO make the arrow into a funciton
     ax.set_ylabel(r'$-log_{10}$ eQTL p-value')
     ax.set_xlabel(r'Position (Mb)')

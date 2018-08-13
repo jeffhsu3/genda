@@ -226,17 +226,32 @@ def create_gene_path(gtf_iter, gene, x_scale):
     raise NotImplementedError
 
 
-def draw_arrows(xmin, xmax, y, ax, spacing=0.001):
-    # :TODO make spacing dynamic based on axis limits
+def draw_arrows(xmin, xmax, y, ax, spacing=None):
+    """
+    xmin : int or float
+        start of where to draw arrows
+    xmax : int or float
+        where to stop drawing arrows
+    y : y position
+        y position where to center arrows
+    """
+    ylim = ax.get_ylim()
+    xlim = ax.get_xlim()
+    # :TODO make sensible defaults here
+    height = (ylim[1] - ylim[0])/5.0
+    length = (xlim[1] - xlim[0])/25.0
+    
+    if spacing:
+        pass
+    else:
+        spacing = (xlim[1] - xlim[0])/10.0
     x_range = np.arange(xmin, xmax, spacing)[1:-1]
     for i in x_range:
-        draw_arrow(i, y, ax)
+        draw_arrow(i, y, ax, x_adjust=length, y_adjust=height)
 
 
-def draw_arrow(x, y, ax):
+def draw_arrow(x, y, ax, x_adjust=0.05, y_adjust=0.05):
     # :TODO x_adjust and y_adjust scale based on axis limits
-    x_adjust = 0.0003
-    y_adjust = 0.05
     ax.plot([x, x + x_adjust], [y, y + y_adjust], 'k-', color='darkgrey')
     ax.plot([x, x + x_adjust], [y, y - y_adjust], 'k-', color='darkgrey')
 
