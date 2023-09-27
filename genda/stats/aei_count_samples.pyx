@@ -3,8 +3,10 @@ cimport numpy as np
 ctypedef np.float64_t dtype_t 
 ctypedef np.uint32_t DTYPE_t
 from genda.pysam_callbacks.allele_counter cimport AlleleCounter
-from cpython cimport bool
-from pysam.calignmentfile cimport AlignmentFile, IteratorRowRegion, AlignedSegment
+from pysam.libcalignmentfile cimport AlignmentFile, AlignedSegment, IteratorRowRegion
+#from pysam.libcalignmentfile cimport BAM_FPROPER_PAIR, BAM_FPAIRED
+
+
 import cython
 from cython.parallel import prange
 from . import *
@@ -17,7 +19,7 @@ cpdef aei_count_samples(np.ndarray[dtype_t, ndim=2] geno,
         np.ndarray[DTYPE_t, ndim=2] c_m, 
         np.ndarray chrom, 
         np.ndarray[DTYPE_t, ndim=1] pos,
-        bool reduced = False):
+        bint reduced = False):
     """ A parallel cython version, should make this part of a class
     """
     cdef int n_samples

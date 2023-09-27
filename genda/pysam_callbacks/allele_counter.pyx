@@ -1,18 +1,16 @@
 import numpy as np
 cimport numpy as np
 
-from cpython cimport bool
+from pysam.libcalignmentfile cimport AlignmentFile, AlignedSegment
+#from pysam.libcalignmentfile cimport BAM_FPROPER_PAIR, BAM_FPAIRED
 #from multiprocessing import Process
 #import cython
-cimport pysam.csamtools as csam
-from pysam.calignmentfile cimport AlignedSegment
+
 from libc.stdlib cimport malloc, free
 from cpython cimport PyObject
-#cimport csamtools
 DTYPE = np.uint16
 ctypedef np.uint16_t DTYPE_t
 ctypedef np.float64_t dtype_t 
-
 cdef inline int int_max(int i , int j): return i if i >= j else j
 
 
@@ -28,7 +26,7 @@ cdef class AlleleCounter:
     """
     #cdef DTYPE_t [:] counts
     def __cinit__(self, char *region, 
-            int position, int phredThreshold=0, bool isIndel = False):
+            int position, int phredThreshold=0, bint isIndel = False):
         #cdef dict BASE_INDEX
         #:TODO get rid of this dictionary make it in C?
         #self.BASE_INDEX = {'A':0, 'a':0, 'C':1, 'c':1, 'G':2, 'g':2, 'T':3, 't':3}
@@ -50,7 +48,7 @@ cdef class AlleleCounter:
 
     def  __call__(self, AlignedSegment alignment, int position = 0,
                  int phredThreshold = 0,
-                 bool isIndel = False):
+                 bint isIndel = False):
         cdef int index
         cdef int inserts
         cdef char *b_qual
